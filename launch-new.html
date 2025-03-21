@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Dashboard | SING Cloud | Next-Gen AI Cloud</title>
+    
+    <!-- Bluma CSS and Bliss JS-->
+    <script src="assets/bliss.js"></script>
+    <link rel="stylesheet" href="assets/bulma.min.css">
+
+    <!-- TACC Theme files -->
+    <link href="assets/tacc-theme.css" rel="stylesheet">
+    <script src="assets/tacc-theme.js"></script>
+    <script src="scripts/sing-api.js"></script>
+    <script type="module" src="./scripts/sing-theme.js"></script>
+    
+    <!-- Launch page specific styles -->
+    <link href="assets/launch-styles.css" rel="stylesheet">
+    
+    <!-- Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&display=swap" rel="stylesheet">
+    <script src="https://kit.fontawesome.com/99d5980073.js" crossorigin="anonymous"></script>
+</head>
+<body>
+    <sing-navigation></sing-navigation>
+    
+    <section class="section form"> 
+        <script>
+            const userHash = 'demo-project';
+            document.addEventListener('DOMContentLoaded', function(){
+                let username = 'default';
+                
+                function fetchUserInfo() {
+                    api.get('/me')
+                        .then(data => {
+                            if (data && data.username) {
+                                username = data.username;
+                                document.querySelector('input[name="namespace"]').value = username;
+                            }
+                        })
+                        .catch(error => {
+                            console.error("Failed to fetch user info:", error);
+                        });
+                }
+                function handleImageChange() {
+                    const selectedImage = document.querySelector('select[name="master_image"]').value;
+                    if (!selectedImage) {
+                        console.log("No image selected, keeping default settings");
+                        document.getElementById('image-metadata-container').style.display = 'none';
+                        return;
+                    }
+                    
+                    console.log(`Image selected: ${selectedImage}`);
+                    
+                    // 找到选中的image对象
+                    const selectedImageObj = window.imagesData?.images?.find(img => img.full_name === selectedImage);
+                    
+                    if (selectedImageObj) {
+                        // 显示元数据
+                        displayImageMetadata(selectedImageObj);
+                        
+                        // 自动填充默认端口
+                        if (selectedImageObj.default_ports) {
+                            document.querySelector('.exposed-port').value = selectedImageObj.default_ports;
+                        }
+                        
+                        // 如果有默认入口点，自动填充命令
+                        if (selectedImageObj.default_entrypoint) {
+                            document.querySelector('input[name="command"]').value = selectedImageObj.default_entrypoint;
+                        }
+                    } else {
+                        document.getElementById('image-metadata-container').style.display = 'none';
+                    }
+                }
+
+                // 显示镜像元数据
+                function displayImageMetadata(imageData) {
+                    const metadataContainer = document.getElementById('image-metadata-container');
+                    const metadataContent = document.getElementById('image-metadata-content');
+                    
+                    // 检查是否有元数据
+                    if (!imageData) {
+                        metadataContainer.style.display = 'none';
+                        return;
+                    }
+                    
+                    // 要显示的三个指定元数据字段
+                    const metadataFields = [
+                        { key: "description", label: "Description" },
+                        { key: "default_ports", label: "Default Ports" },
+                        { key: "default_entrypoint", label: "Default Entrypoint" }
+                    ];
+                    
+                    // 创建简洁的显示格式，无论是否有值都显示这三个字段
+                    let html = '';
+                    
+                    metadataFields.forEach(field => {
+                        const value = imageData[field.key] && imageData[field.key].toString().trim() !== '' ? 
+                            imageData[field.key] : '';
+                        
+                        html += `<div class="mb-1">
+                            <span class="has-text-grey is-size-7">${field.label}: </span>
+                            <span class="has-text-grey is-size-7">${value}</span>
+                        </div>`;
+                    });
+                    
+                    metadataContent.innerHTML = html;
+                    metadataContainer.style.display = 'block';
+                }
+
+                // Fetch images from API and populate select box
+                function fetchImages() {
+                    api.get(`/me/images`)
+                        .then(data => {
+                            // 保存所有镜像数据以便后续使用
+                            window.imagesData = data;
+                            
+                            var select = document.querySelector('select[name="master_image"]');
+                            select.innerHTML = "";
+                            
+                            data.images.forEach(image => {
+                                var option = document.createElement('option');
+                                option.value = image.full_name;
+                                option.textContent = image.full_name;
+                                select.appendChild(option);
+                            });
+                            
+                            if (!select.value && select.options.length > 0) {
+                                select.selectedIndex = 0;
+                            }
+                            
+                            handleImageChange();
+                            
+                            select.addEventListener('change', handleImageChange);
+                        })
+                        .catch(error => {
+                            console.error("Failed to fetch images:", error);
+                        });
+                }
+                
+                // Fetch available GPU information
+                function fetchGpuInfo() {
+                    api.get(`/gpu-info`)
+                        .then(data => {
+                            const gpuContainer = document.getElementById('gpu-options-container');
+                            gpuContainer.innerHTML = '';
+                            
+                            // Store GPU info for later use
+                            window.gpuInfo = data.gpu_info || {};
+                            
+                            if (data.gpu_info && data.gpu_info.summary) {
+                                Object.keys(data.gpu_info.summary).forEach(gpuType => {
+                                    const info = data.gpu_info.summary[gpuType];
+                                    const gpuButton = document.createElement('button');
+                                    gpuButton.classList.add('button', 'gpu-option');
+                                    gpuButton.dataset.type = gpuType;
+                                    gpuButton.dataset.total = info.total;
+                                    gpuButton.dataset.used = info.used;
+                                    gpuButton.textContent = `${gpuType} (${info.used}/${info.total})`;
+                                    gpuButton.addEventListener('click', function() {
+                                        console.log('GPU button click:', this.dataset.type);
+                                        document.querySelectorAll('.gpu-option').forEach(btn => {
+                                            btn.classList.remove('is-primary', 'is-selected');
+                                            console.log('Removed selection:', btn.textContent);
+                                        });
+                                        this.classList.add('is-primary', 'is-selected');
+                                        console.log('Added selection:', this.textContent);
+                                        document.getElementById('gpu-type-input').value = this.dataset.type;
+                                        
+                                        setupGpuWorkerOptions(this.dataset.type, parseInt(this.dataset.total), parseInt(this.dataset.used));
+                                    });
+                                    gpuContainer.appendChild(gpuButton);
+                                });
+                                
+                                if (gpuContainer.firstChild) {
+                                    gpuContainer.firstChild.click();
+                                    gpuContainer.firstChild.classList.add('is-selected');
+                                }
+                            }
+                        })
+                        .catch(error => {
+                            console.error("Failed to fetch GPU info:", error);
+                        });
+                }
+                
+                // Initialize GPU-Worker combination options
+                function setupGpuWorkerOptions(gpuType, totalGPUs, usedGPUs) {
+                    const availableGPUs = Math.max(0, totalGPUs - usedGPUs);
+                    console.log(`Available GPUs (${gpuType}): ${availableGPUs}`);
+                    
+                    // Define all possible options
+                    const allOptions = [
+                        {gpus: 1, workers: 1, label: '1 GPU × 1 Worker', minRequired: 1},
+                        {gpus: 1, workers: 2, label: '1 GPU × 2 Workers', minRequired: 2},
+                        {gpus: 1, workers: 4, label: '1 GPU × 4 Workers', minRequired: 4},
+                        {gpus: 1, workers: 8, label: '1 GPU × 8 Workers', minRequired: 8},
+                        {gpus: 2, workers: 2, label: '2 GPUs × 2 Workers', minRequired: 4},
+                        {gpus: 2, workers: 4, label: '2 GPUs × 4 Workers', minRequired: 8}
+                    ];
+                    
+                    const container = document.getElementById('gpu-worker-options');
+                    container.innerHTML = '';
+                    
+                    let hasEnabledOption = false;
+                    
+                    allOptions.forEach(option => {
+                        const button = document.createElement('button');
+                        button.classList.add('button', 'gpu-worker-option');
+                        button.textContent = option.label;
+                        button.dataset.gpus = option.gpus;
+                        button.dataset.workers = option.workers;
+                        
+                        // Calculate total GPUs needed for this option
+                        const requiredGPUs = option.gpus * option.workers;
+                        
+                        // If required GPUs exceed available, disable button
+                        if (requiredGPUs > availableGPUs) {
+                            button.disabled = true;
+                            button.classList.add('is-light');
+                            button.title = `Requires ${requiredGPUs} GPUs, but only ${availableGPUs} available`;
+                        } else {
+                            hasEnabledOption = true;
+                            button.addEventListener('click', function() {
+                                console.log('GPU-Worker button click:', this.dataset.gpus, 'x', this.dataset.workers);
+                                document.querySelectorAll('.gpu-worker-option').forEach(btn => {
+                                    btn.classList.remove('is-primary', 'is-selected');
+                                    console.log('Removed selection:', btn.textContent);
+                                });
+                                this.classList.add('is-primary', 'is-selected');
+                                console.log('Added selection:', this.textContent);
+                                document.getElementById('gpu-limit-input').value = this.dataset.gpus;
+                                document.getElementById('worker-replicas-input').value = this.dataset.workers;
+                            });
+                        }
+                        
+                        container.appendChild(button);
+                    });
+                    
+                    // Default select first available option
+                    if (hasEnabledOption) {
+                        for (let i = 0; i < container.children.length; i++) {
+                            const button = container.children[i];
+                            if (!button.disabled) {
+                                button.click();
+                                button.classList.add('is-selected');
+                                break;
+                            }
+                        }
+                    }
+                }
+                
+                // Initialize environment variable functionality
+                document.getElementById('add_env_var').addEventListener('click', function() {
+                    var envVarContainer = document.querySelector('.env-var-container');
+                    var newEnvVar = document.createElement('div');
+                    newEnvVar.classList.add('field', 'is-grouped', 'env-var');
+                    newEnvVar.innerHTML = `
+                        <div class="control">
+                            <input class="input" type="text" name="env_name" placeholder="Variable name">
+                        </div>
+                        <div class="control">
+                            <input class="input" type="text" name="env_value" placeholder="Value">
+                        </div>
+                        <div class="control">
+                            <button class="button is-danger remove_env_var"> × </button>
+                        </div>
+                    `;
+                    envVarContainer.append(newEnvVar);
+                    newEnvVar.querySelector('.remove_env_var').addEventListener('click', function() {
+                        envVarContainer.removeChild(newEnvVar);
+                    });
+                });
+                                
+                // Form submission
+                document.getElementById('submit').addEventListener('click', function(){
+                    const commandValue = document.querySelector('input[name="command"]').value.trim();
+                    
+                    const useSSH = commandValue.length === 0;
+                    
+                    const portsInput = document.querySelector('.exposed-port').value.trim();
+                    const exposedPorts = portsInput ? 
+                        portsInput.split(',').map(port => parseInt(port.trim())).filter(port => !isNaN(port)) : 
+                        [];
+                    
+                    if (useSSH && !exposedPorts.includes(22)) {
+                        exposedPorts.push(22);
+                    }
+                    
+                    var data = {
+                        namespace: document.querySelector('input[name="namespace"]').value || username,
+                        job_name: document.querySelector('input[name="job_name"]').value || 'job',
+                        master_image: document.querySelector('select[name="master_image"]').value,
+                        worker_replicas: parseInt(document.getElementById('worker-replicas-input').value) || 1,
+                        cpu_limit: 1,
+                        memory_limit: '2Gi',
+                        gpu_limit: parseInt(document.getElementById('gpu-limit-input').value) || 0,
+                        commandArray: commandValue ? commandValue.split(/\s+/).map(arg => arg.trim()) : [],
+                        env_vars: [],
+                        use_ssh: useSSH,
+                        gpu_type: document.getElementById('gpu-type-input').value,
+                        exposed_ports: exposedPorts
+                    };
+                    
+                    document.querySelectorAll('.env-var').forEach(function(row) {
+                        const name = row.querySelector('input[name="env_name"]').value;
+                        const value = row.querySelector('input[name="env_value"]').value;
+                        if (name) {
+                            data.env_vars.push({
+                                name: name,
+                                value: value
+                            });
+                        }
+                    });
+                    
+                    // Create confirm dialog content
+                    let confirmContent = `
+                    <div class="modal is-active">
+                        <div class="modal-background"></div>
+                        <div class="modal-card">
+                            <header class="modal-card-head">
+                                <p class="modal-card-title">Confirm Job Creation</p>
+                                <button class="delete close-modal" aria-label="close"></button>
+                            </header>
+                            <section class="modal-card-body">
+                                <div class="content">
+                                    <h4>Job Configuration</h4>
+                                    <table class="table is-fullwidth">
+                                        <tbody>
+                                            <tr><td>Namespace:</td><td>${data.namespace}</td></tr>
+                                            <tr><td>Job Name:</td><td>${data.job_name}</td></tr>
+                                            <tr><td>Image:</td><td>${data.master_image}</td></tr>
+                                            <tr><td>GPU Type:</td><td>${data.gpu_type}</td></tr>
+                                            <tr><td>GPU Count:</td><td>${data.gpu_limit}</td></tr>
+                                            <tr><td>Worker Count:</td><td>${data.worker_replicas}</td></tr>
+                                            <tr><td>CPU Limit:</td><td>${data.cpu_limit} cores</td></tr>
+                                            <tr><td>Memory Limit:</td><td>${data.memory_limit}</td></tr>
+                                            <tr><td>Command:</td><td>${data.commandArray.length > 0 ? data.commandArray.join(' ') : 'None (SSH mode)'}</td></tr>
+                                            <tr><td>SSH Mode:</td><td>${data.use_ssh ? 'Enabled' : 'Disabled'}</td></tr>
+                                            <tr><td>Exposed Ports:</td><td>${data.exposed_ports.length > 0 ? data.exposed_ports.join(', ') : 'None'}</td></tr>
+                                        </tbody>
+                                    </table>
+                                    ${data.env_vars.length > 0 ? `
+                                    <h4>Environment Variables</h4>
+                                    <table class="table is-fullwidth">
+                                        <thead>
+                                            <tr><th>Name</th><th>Value</th></tr>
+                                        </thead>
+                                        <tbody>
+                                            ${data.env_vars.map(env => `<tr><td>${env.name}</td><td>${env.value}</td></tr>`).join('')}
+                                        </tbody>
+                                    </table>
+                                    ` : ''}
+                                </div>
+                            </section>
+                            <footer class="modal-card-foot">
+                                <button class="button is-primary confirm-create">Confirm</button>
+                                <button class="button close-modal">Cancel</button>
+                            </footer>
+                        </div>
+                    </div>
+                    `;
+                    
+                    // Add confirm dialog to page
+                    const confirmModal = document.createElement('div');
+                    confirmModal.innerHTML = confirmContent;
+                    document.body.appendChild(confirmModal);
+                    
+                    // Handle close button
+                    document.querySelectorAll('.close-modal').forEach(btn => {
+                        btn.addEventListener('click', function() {
+                            document.body.removeChild(confirmModal);
+                        });
+                    });
+                    
+                    // Handle confirm button
+                    document.querySelector('.confirm-create').addEventListener('click', function() {
+                        // Remove confirm dialog
+                        document.body.removeChild(confirmModal);
+                        
+                        // Send API request to create job
+                        api.post(`/me/create-job`, data)
+                            .then(result => {
+                                console.log('Success:', result);
+                                showResultModal('Success', 'Job created successfully!', 'is-success', function() {
+                                    window.location.href = '/';
+                                });
+                            })
+                            .catch(error => {
+                                console.error('Error:', error);
+                                // Extract detailed error information
+                                let errorMessage = 'Failed to create job';
+                                
+                                if (error.response) {
+                                    // Server response contains error info
+                                    try {
+                                        const responseData = JSON.parse(error.response);
+                                        errorMessage = responseData.message || responseData.error || JSON.stringify(responseData);
+                                    } catch (e) {
+                                        // If not JSON format, use response text directly
+                                        errorMessage = error.response;
+                                    }
+                                } else if (error.message) {
+                                    // Use error object's message property
+                                    errorMessage = error.message;
+                                }
+                                
+                                // Show error modal
+                                showResultModal('Error', errorMessage, 'is-danger');
+                            });
+                    });
+                });
+                
+                // Initialize page
+                fetchUserInfo();
+                fetchImages();
+                fetchGpuInfo();
+            });
+
+            // Add a generic result display modal function
+            function showResultModal(title, message, colorClass, callback) {
+                const resultModalContent = `
+                <div class="modal is-active">
+                    <div class="modal-background"></div>
+                    <div class="modal-card">
+                        <header class="modal-card-head ${colorClass}">
+                            <p class="modal-card-title">${title}</p>
+                            <button class="delete close-result-modal" aria-label="close"></button>
+                        </header>
+                        <section class="modal-card-body">
+                            <div class="content">
+                                <p>${message}</p>
+                            </div>
+                        </section>
+                        <footer class="modal-card-foot">
+                            <button class="button ${colorClass} close-result-modal">OK</button>
+                        </footer>
+                    </div>
+                </div>
+                `;
+                
+                const resultModal = document.createElement('div');
+                resultModal.innerHTML = resultModalContent;
+                document.body.appendChild(resultModal);
+                
+                // Handle close button
+                document.querySelectorAll('.close-result-modal').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        document.body.removeChild(resultModal);
+                        if (typeof callback === 'function') {
+                            callback();
+                        }
+                    });
+                });
+            }
+        </script>
+        <div class="container main-form">
+            <div class="columns is-multiline">
+                <div class="column is-12">
+                    <h1 class="title">Create Job</h1>
+                    <h2 class="subtitle">Select container image and configuration</h2>
+                </div>
+            </div>
+            
+            <!-- Image Selection -->
+            <div class="form-section">
+                <h3 class="section-title">Image Selection</h3>
+                <div class="field">
+                    <label class="label">Container Image</label>
+                    <div class="control">
+                        <div class="select is-fullwidth">
+                            <select name="master_image"></select>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 镜像元数据显示区域 -->
+                <div id="image-metadata-container" class="mt-2 px-3 py-2" style="display:none; background-color: #fafafa; border-radius: 4px;">
+                    <div id="image-metadata-content"></div>
+                </div>
+            </div>
+            
+            <!-- Basic Information -->
+            <div class="form-section">
+                <h3 class="section-title">Basic</h3>
+                <div class="columns">
+                    <div class="column is-4 field">
+                        <label class="label">Namespace</label>
+                        <div class="control">
+                            <input class="input" type="text" name="namespace" placeholder="Set automatically">
+                        </div>
+                    </div>
+                    <div class="column is-8 field">
+                        <label class="label">Job Name</label>
+                        <div class="control">
+                            <input class="input" type="text" name="job_name" value="job" placeholder="job">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- GPU Selection -->
+            <div class="form-section">
+                <h3 class="section-title">GPU Configuration</h3>
+                <div class="field">
+                    <label class="label">GPU Type</label>
+                    <div class="control">
+                        <div id="gpu-options-container" class="buttons"></div>
+                        <input type="hidden" id="gpu-type-input" name="gpu_type" value="RTX3090">
+                    </div>
+                </div>
+                
+                <!-- GPU and Worker combination (always visible now) -->
+                <div id="gpu-worker-section" class="field">
+                    <label class="label">GPU and Worker Configuration</label>
+                    <div class="control">
+                        <div id="gpu-worker-options" class="buttons"></div>
+                        <input type="hidden" id="gpu-limit-input" name="gpu_limit" value="1">
+                        <input type="hidden" id="worker-replicas-input" name="worker_replicas" value="1">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Job Configuration -->
+            <div class="form-section">
+                <h3 class="section-title">Job Configuration</h3>
+                
+                <!-- Entry Command -->
+                <div id="entrypoint-section" class="field">
+                    <label class="label">Entry Command (leave empty to enable SSH)</label>
+                    <div class="control">
+                        <input class="input" type="text" name="command" value="" placeholder="e.g.: python /app/main.py --arg1 value1">
+                    </div>
+                </div>
+                
+                <!-- Exposed Ports -->
+                <div class="field">
+                    <label class="label">Exposed Ports</label>
+                    <div class="control">
+                        <input class="input exposed-port" type="text" placeholder="Comma-separated ports (e.g.: 22,80,8080)">
+                    </div>
+                </div>
+                
+                <!-- SSH Option - hidden, handled by code logic -->
+                <div id="ssh-section" class="field" style="display: none;">
+                    <label class="label">Enable SSH</label>
+                    <div class="control">
+                        <input type="checkbox" name="use_ssh" style="width: 20px; height: 20px;">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Environment Variables -->
+            <div id="env-vars-section" class="form-section">
+                <h3 class="section-title">Environment Variables</h3>
+                <div class="field env-var-container">
+                    <div class="field is-grouped env-var">
+                        <div class="control is-expanded">
+                            <input class="input" type="text" name="env_name" placeholder="Variable name">
+                        </div>
+                        <div class="control is-expanded">
+                            <input class="input" type="text" name="env_value" placeholder="Value">
+                        </div>
+                        <div class="control">
+                            <button class="button is-primary" id="add_env_var">＋</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Submit Button -->
+            <div class="field submit">
+                <div class="control">
+                    <button class="button primary is-medium" id="submit">Launch</button>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <footer class="section footer">
+        <div class="container">
+            <div class="columns content">
+                <div class="column items is-3">
+                    <div class="item item-title">TACC Workflow</div>
+                    <div class="item">Launch & Monitor AI Jobs</div>
+                    <div class="item">Access Cloud Storage</div>
+                    <div class="item">Manage Code & Scripts</div>
+                </div>
+                <div class="column items is-3">
+                    <div class="item item-title">TACC Space</div>
+                    <div class="item">Latest Public Images</div>
+                    <div class="item">Public Dataset</div>
+                    <div class="item">Discussion Groups</div>
+                </div>
+                <div class="column items is-3">
+                    <div class="item item-title">Research</div>
+                    <div class="item">AI-centric Networking</div>
+                    <div class="item">Machine Learning Systems</div>
+                    <div class="item">Cluster Resource Scheduling</div>
+                </div>
+                <div class="column items is-3">
+                    <div class="item item-title">Company</div>
+                    <div class="item">Our Team</div>
+                    <div class="item">Careers</div>
+                    <div class="item">HKUST iSING Lab</div>
+                </div>
+            </div>
+            <div class="columns is-align-items-center">
+                <div class="column is-narrow logo"><img src="assets/tacc-logo.png" /></div>
+                <div class="column copyright is-narrow"><span class="text-colored">星畅</span> © 2020–2024</div>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>
