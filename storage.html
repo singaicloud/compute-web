@@ -19,6 +19,67 @@
     <script src="scripts/sing-api.js"></script>
     <script type="module" src="./scripts/sing-theme.js"></script>
     
+    <!-- Custom styles for storage page -->
+    <style>
+        .main-table table td, 
+        .main-table table th {
+            text-align: left !important;
+        }
+
+        .main-table .actions {
+            justify-content: flex-start !important;
+            display: flex;
+            gap: 1rem;
+        }
+        
+        .main-table .actions div {
+            margin-right: 8px;
+        }
+
+        .main-table thead th {
+            padding-left: 8px !important;
+        }
+
+        .main-table thead th span.dt-column-order {
+            right: 0 !important;
+        }
+
+        .main-table table {
+            table-layout: fixed;
+            width: 100%;
+        }
+
+        .main-table table td:first-child,
+        .main-table table th:first-child {
+            width: 60px !important;
+            max-width: 60px !important;
+        }
+
+        .main-table table td:nth-child(4),
+        .main-table table th:nth-child(4) {
+            width: 100px !important;
+        }
+
+        .main-table table td:nth-child(2),
+        .main-table table th:nth-child(2) {
+            width: auto;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .main-table table td:nth-child(3),
+        .main-table table th:nth-child(3) {
+            width: 200px !important;
+        }
+
+        .main-table .fa-folder,
+        .main-table .fa-file {
+            font-size: 1.2em;
+            margin-left: 5px;
+        }
+    </style>
+    
     <!-- Font -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -162,7 +223,7 @@
                     return $.create("thead", { contents:{
                         tag: "tr",
                         contents: header.map((key) =>
-                            ({tag:"th", contents: key})
+                            ({tag:"th", className: "dt-left", contents: key})
                         )
                     }});
                 }
@@ -170,10 +231,10 @@
                 function fetchPath(path) {
                     currentPath = path;
                     var columnDefs = [
-                        { targets: 0, width: "0px", orderData: [4, 1] },
-                        { targets: 2, width: "0px" },
-                        { targets: 1, className: 'dt-left' },
-                        { targets: 3, orderable: 'false' },
+                        { targets: 0, width: "60px", orderData: [4, 1], className: 'dt-left' },
+                        { targets: 1, width: "40%", className: 'dt-left' },
+                        { targets: 2, width: "30%", className: 'dt-left' },
+                        { targets: 3, width: "15%", orderable: 'false', className: 'dt-left' },
                         { targets: 4, visible: false },
                     ];
                     api.get(`/me/storage/list?path=` + path)

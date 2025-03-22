@@ -177,6 +177,10 @@
                                     <span class="job-name">${jobName}</span>
                                 </div>
                                 <div class="job-actions">
+                                    <div class="job-action-debug-button danger" onclick="event.stopPropagation(); deleteJob('${jobName}', '${namespace}', '${jobContainerId}')">
+                                        <!-- <i class="fa-regular fa-trash-alt"></i>
+                                            <span>Delete</span> -->
+                                    </div>
                                     <div class="job-action-button info" onclick="event.stopPropagation(); showSetupInfo('${jobName}')">
                                         <i class="fa-solid fa-info-circle"></i>
                                         <span>Info</span>
@@ -191,10 +195,6 @@
                                             <span>Stop</span>
                                         </div>
                                     ` : ''}
-                                    <!-- <div class="job-action-button danger" onclick="event.stopPropagation(); deleteJob('${jobName}', '${namespace}', '${jobContainerId}')">
-                                        <i class="fa-regular fa-trash-alt"></i>
-                                            <span>Delete</span>
-                                    </div> -->
                                 </div>
                             </div>
                             <div class="job-meta">

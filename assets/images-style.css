@@ -1,0 +1,510 @@
+.repository-section {
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+}
+
+.repository-header {
+    padding: 0.5rem 0.5rem;
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: #333;
+}
+
+.repository-content {
+    background-color: #fff;
+    padding: 1.25rem;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    box-shadow: none;
+    transition: all 0.2s ease;
+}
+
+.repository-content:hover {
+    box-shadow: none;
+}
+
+.filter-search-box {
+    background-color: transparent;
+    padding: 0 0 1rem 0;
+    margin-bottom: 1.25rem;
+    border: none;
+    border-bottom: 1px solid var(--border-color);
+    transition: all 0.2s ease;
+}
+
+.filter-search-box:focus-within {
+    border-color: var(--border-color);
+}
+
+/* Style for the overall search input to enhance UX */
+#publicSearchInput, #privateSearchInput {
+    border-width: 1px;
+    transition: all 0.2s ease;
+}
+
+#publicSearchInput:focus, #privateSearchInput:focus {
+    border-color: var(--brand-color);
+    box-shadow: none;
+}
+
+.image-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    border-radius: 6px;
+    overflow: hidden;
+    font-size: 0.9rem;
+}
+
+.image-table th,
+.image-table td {
+    padding: 0.8rem 0.9rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.image-table tr:last-child td {
+    border-bottom: none;
+}
+
+.image-table tr:hover {
+    background-color: #f7f7f7;
+}
+
+.image-table th {
+    background-color: #f0f0f0;
+    font-weight: 600;
+    color: #454545;
+    position: relative;
+    font-size: 0.85rem;
+    padding-top: 0.7rem;
+    padding-bottom: 0.7rem;
+}
+
+.image-table th:after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 1px;
+    background-color: var(--border-color);
+}
+
+.view-button {
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 0.85rem;
+    transition: color 0.2s ease;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+}
+
+.view-button:hover {
+    border-bottom: none;
+    background-color: rgba(0, 0, 0, 0.05);
+    color: #333;
+}
+
+.view-button i {
+    margin-right: 0.25rem;
+}
+
+.label-badge {
+    display: inline-block;
+    padding: 0.25rem 0.6rem;
+    border-radius: 16px;
+    background-color: #f0f0f0;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #454545;
+    letter-spacing: 0.01em;
+}
+
+.upload-tab {
+    margin-top: 0;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: none;
+    border: 1px solid var(--border-color);
+    background-color: white;
+}
+
+.tab-nav {
+    display: flex;
+    border-bottom: 1px solid var(--border-color);
+    background-color: #f5f5f5;
+}
+
+.tab-item {
+    padding: 0.8rem 1.2rem;
+    cursor: pointer;
+    border: 1px solid transparent;
+    border-bottom: none;
+    margin-right: 0.5rem;
+    border-radius: 6px 6px 0 0;
+    font-weight: 600;
+    font-size: 0.85rem;
+    transition: all 0.2s ease;
+}
+
+.tab-item:hover:not(.active) {
+    background-color: rgba(0, 0, 0, 0.03);
+}
+
+.tab-item.active {
+    border-color: var(--border-color);
+    background-color: white;
+    margin-bottom: -1px;
+    color: #333;
+    box-shadow: none;
+}
+
+.tab-content {
+    border-top: none;
+    padding: 1.5rem;
+    background-color: white;
+    border-radius: 0 0 8px 8px;
+    font-size: 0.85rem;
+}
+
+.input-row {
+    margin-bottom: 1.25rem;
+    display: flex;
+    align-items: flex-end;
+    gap: 1rem;
+}
+
+.auth-dropdown {
+    flex: 1;
+    margin-right: 0;
+}
+
+.add-button {
+    display: inline-flex;
+    align-items: center;
+    background-color: var(--brand-color);
+    color: white;
+    border: 1px solid var(--brand-color);
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 0.85rem;
+    transition: all 0.2s ease;
+}
+
+.add-button:hover {
+    background-color: white;
+    color: var(--brand-color);
+}
+
+.add-button:active {
+    box-shadow: none;
+}
+
+.add-button i {
+    margin-right: 0.5rem;
+}
+
+.create-from-checkbox {
+    margin-right: 0.4rem;
+}
+
+.create-from-label {
+    cursor: pointer;
+    padding: 0.3rem 0.6rem;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 0.85rem;
+}
+
+.create-from-label:hover {
+    border-bottom: none;
+    background-color: rgba(0, 0, 0, 0.05);
+    color: #333;
+}
+
+.create-from-label i {
+    margin-right: 0.25rem;
+}
+
+/* Input field sizing */
+.input, .select select {
+    height: 2.25rem;
+    font-size: 0.85rem;
+    transition: all 0.2s ease;
+    border-radius: 6px;
+}
+
+.input:focus {
+    box-shadow: none;
+    border-color: var(--brand-color);
+    outline: none;
+}
+
+.select select:focus {
+    box-shadow: none;
+    border-color: var(--brand-color);
+    outline: none;
+}
+
+.filter-search-box .label, .auth-dropdown .label, .tab-content .label {
+    font-size: 0.85rem;
+    margin-bottom: 0.3rem;
+}
+
+.help {
+    font-size: 0.75rem;
+    margin-top: 0.3rem;
+    color: #757575;
+}
+
+/* Override button styles to match theme */
+.button {
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    font-size: 0.85rem;
+}
+
+.button:focus, 
+.add-button:focus,
+button:focus, 
+input:focus, 
+select:focus {
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+.button:not(.is-primary) {
+    background-color: #f5f5f5;
+    border: 1px solid #e0e0e0;
+}
+
+.button:not(.is-primary):hover {
+    background-color: #e8e8e8;
+    border-color: #d0d0d0;
+}
+
+.button.is-primary {
+    background-color: var(--brand-color) !important;
+    border: 1px solid var(--brand-color) !important;
+    color: white !important;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.button.is-primary:hover {
+    background-color: white !important;
+    color: var(--brand-color) !important;
+    box-shadow: none;
+}
+
+.button.is-primary:active {
+    box-shadow: none;
+}
+
+/* Notification styling */
+.notification {
+    border-radius: 6px;
+    margin-top: 1.25rem;
+    padding: 1rem 1.5rem;
+    box-shadow: none;
+}
+
+.notification.is-hidden {
+    display: none;
+}
+
+.notification.is-success {
+    background-color: #f0f9f5;
+    color: #0c6b37;
+    border: 1px solid #bae6cf;
+}
+
+.notification.is-danger {
+    background-color: #fff2f3;
+    color: #b71c1c;
+    border: 1px solid #faccd2;
+}
+
+/* Modal styling */
+.modal-content {
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.modal-content .box {
+    padding: 1.5rem;
+    border-radius: 8px;
+    box-shadow: none;
+}
+
+.modal-content .title {
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border-color);
+    color: #333;
+}
+
+.modal-content .field {
+    margin-bottom: 1rem;
+}
+
+.modal-content .label {
+    font-weight: 600;
+    color: #454545;
+    font-size: 0.85rem;
+}
+
+.modal-content .control p {
+    margin-top: 0.25rem;
+    font-size: 0.9rem;
+}
+
+/* Adjust checkbox styling */
+.checkbox {
+    display: flex;
+    align-items: center;
+}
+
+.checkbox input[type="checkbox"] {
+    margin-right: 0.4rem;
+}
+
+/* Modal styling for label list */
+.image-label-list {
+    list-style: none;
+    margin-left: 0;
+    padding-left: 0;
+}
+
+.image-label-list li {
+    padding: 0.5rem;
+    border-bottom: 1px solid #f0f0f0;
+    display: flex;
+    align-items: center;
+}
+
+.image-label-list li:last-child {
+    border-bottom: none;
+}
+
+.image-label-list li:before {
+    content: '\f02b';
+    font-weight: 900;
+    margin-right: 0.5rem;
+    color: #666;
+}
+
+/* Adjust icon size in inputs */
+.control.has-icons-left .icon {
+    height: 2.25rem;
+}
+
+/* Form fields general spacing */
+.field:not(:last-child) {
+    margin-bottom: 0.75rem;
+}
+
+/* Registry auth button */
+#addAuthBtn {
+    margin-top: 0;
+    align-self: flex-end;
+    height: 2.25rem;
+    margin-bottom: 1.5rem;
+    font-size: 0.85rem;
+    padding: 0 0.75rem;
+}
+
+/* Add Images section */
+.repository-section:last-of-type .repository-header {
+    color: var(--brand-color);
+}
+
+.add-images-section {
+    padding: 0.5rem 0;
+}
+
+/* Styles for Add Images section */
+.add-images-container {
+    margin-bottom: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+#uploadOptions {
+    margin-top: 1rem;
+}
+
+.add-images-container .repository-content {
+    display: none;
+    background: none;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+}
+
+.add-images-container .add-button {
+    background-color: var(--brand-color);
+    color: white;
+    border-radius: 8px;
+    padding: 0.6rem 1.2rem;
+    font-weight: 500;
+}
+
+.add-images-container .add-button:hover {
+    background-color: white;
+    color: var(--brand-color);
+}
+
+.add-images-container .add-button:focus {
+    outline: none;
+    box-shadow: none;
+}
+
+/* Upload tab styling */
+.upload-tab {
+    margin-top: 0;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: none;
+    border: 1px solid var(--border-color);
+    background-color: white;
+}
+
+/* Upload and fetch buttons styling */
+#uploadButton, #fetchButton {
+    padding: 0.6rem 1.2rem;
+    font-weight: 500;
+    margin-top: 0rem;
+    background-color: var(--brand-color);
+    color: white;
+}
+
+#uploadButton:hover, #fetchButton:hover {
+    background-color: #443980;
+    color: white;
+}
+
+#uploadButton:focus, #fetchButton:focus {
+    outline: none;
+    box-shadow: none;
+}
+
+.text-center {
+    text-align: center;
+}
+
+.mt-2 {
+    margin-top: 0.5rem;
+}
+
+.mb-2 {
+    margin-bottom: 0.5rem;
+} 

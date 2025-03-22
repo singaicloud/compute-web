@@ -33,6 +33,43 @@
             document.addEventListener('DOMContentLoaded', function(){
                 let username = 'default';
                 
+                // Process URL parameters to prefill image name, entrypoint and ports
+                function processUrlParameters() {
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const repository = urlParams.get('repository');
+                    const imageName = urlParams.get('image');
+                    const tag = urlParams.get('tag');
+                    const entrypoint = urlParams.get('entrypoint');
+                    const ports = urlParams.get('ports');
+                    
+                    if (repository && imageName && tag) {
+                        const fullImageName = `${repository}/${imageName}:${tag}`;
+                        console.log(`URL params specified image: ${fullImageName}`);
+
+                        // Pre-fill image name
+                        window.selectedImageFromUrl = fullImageName;
+                        // Pre-fill entrypoint
+                        if (entrypoint) {
+                            document.querySelector('input[name="command"]').value = entrypoint;
+                            console.log(`Pre-filled entrypoint: ${entrypoint}`);
+                        }
+                        // Pre-fill ports
+                        if (ports) {
+                            try {
+                                const portsObj = JSON.parse(ports);
+                                // Format ports for the input field (comma-separated)
+                                if (typeof portsObj === 'object') {
+                                    const portsList = Object.keys(portsObj).join(',');
+                                    document.querySelector('.exposed-port').value = portsList;
+                                    console.log(`Pre-filled ports: ${portsList}`);
+                                }
+                            } catch (e) {
+                                console.error("Error parsing ports JSON:", e);
+                            }
+                        }
+                    }
+                }
+                
                 function fetchUserInfo() {
                     api.get('/me')
                         .then(data => {
@@ -127,6 +164,19 @@
                                 option.textContent = image.full_name;
                                 select.appendChild(option);
                             });
+                            
+                            // Check if image is pre-selected
+                            if (window.selectedImageFromUrl) {
+                                // Find with matching value
+                                const options = select.options;
+                                for (let i = 0; i < options.length; i++) {
+                                    if (options[i].value === window.selectedImageFromUrl) {
+                                        select.selectedIndex = i;
+                                        console.log(`Selected image from URL: ${window.selectedImageFromUrl}`);
+                                        break;
+                                    }
+                                }
+                            }
                             
                             if (!select.value && select.options.length > 0) {
                                 select.selectedIndex = 0;
@@ -417,6 +467,7 @@
                 fetchUserInfo();
                 fetchImages();
                 fetchGpuInfo();
+                processUrlParameters();
             });
 
             // Add a generic result display modal function

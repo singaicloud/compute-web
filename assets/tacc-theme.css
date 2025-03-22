@@ -739,6 +739,17 @@ a:hover {
   background-color: #fcfcfc;
 }
 
+.job-action-debug-button {
+  background-color: #ffffff;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+}
+
+.job-action-debug-button:hover {
+  background-color: #f5f5f5;
+  border-color: #e0e0e0;
+}
+
 .job-action-button:hover {
   background-color: #f5f5f5;
   border-color: #e0e0e0;

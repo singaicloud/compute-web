@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Dashboard | SING Cloud | Next-Gen AI Cloud</title>
+    <title>Image Repository | SING Cloud | Next-Gen AI Cloud</title>
     
     <!-- CSS and JS Libraries-->
     <script src="assets/bliss.js"></script>
@@ -15,6 +15,7 @@
 
     <!-- TACC Theme files -->
     <link href="assets/tacc-theme.css" rel="stylesheet">
+    <link href="assets/images-style.css" rel="stylesheet">
     <script src="assets/tacc-theme.js"></script>
     <script src="scripts/sing-api.js"></script>
     <script type="module" src="./scripts/sing-theme.js"></script>
@@ -32,45 +33,148 @@
         <div class="container">
             <h1 class="title">Available Images</h1>
             <p class="subtitle">Browse all available images in the TACC repository.</p>
-            <table id="imageTable" class="table is-striped is-hoverable is-fullwidth">
-                <thead>
-                    <tr>
-                        <th>Image Repository</th>
-                        <th>Image Name</th>
-                        <th>Tag</th>
-                        <th>Size</th>
-                        <th>Last Updated</th>
-                        <th>Architecture</th>
-                        <th>OS</th>
-                        <th>Details</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
-        </div>
-    </section>
-
-    <section class="section upload-image">
-        <div class="container">
-            <h2 class="title">Upload Docker Image</h2>
-            <form id="uploadForm" enctype="multipart/form-data">
-                <div class="field">
-                    <label class="label">Select .tar file</label>
-                    <div class="control">
-                        <input type="file" name="file" id="fileInput" class="input" accept=".tar" required>
+            
+            <!-- Public Image Repository Section -->
+            <div class="repository-section">
+                <div class="repository-header">
+                    <i class="fas fa-globe-americas mr-2"></i> Public Image Repository
+                </div>
+                <div class="repository-content">
+                    <div class="filter-search-box">
+                        <div class="field">
+                            <label class="label">Filter/Search</label>
+                            <div class="control has-icons-left">
+                                <input id="publicSearchInput" class="input" type="text" placeholder="Filter by name, tag, or description...">
+                                <span class="icon is-small is-left">
+                                    <i class="fas fa-search"></i>
+                                </span>
+                            </div>
+                        </div>
                     </div>
+                    <table id="publicImageTable" class="image-table">
+                        <thead>
+                            <tr>
+                                <th>Image Repository</th>
+                                <th>Image Name</th>
+                                <th>Tag</th>
+                                <th>Size</th>
+                                <th>Last Updated</th>
+                                <th>Details</th>
+                                <th>Actions</th>
+                                <th>Label</th>
+                            </tr>
+                        </thead>
+                        <tbody id="publicImageTableBody"></tbody>
+                    </table>
                 </div>
-                <div class="field">
-                    <label class="label">User Hash</label>
-                    <div class="control">
-                        <input type="text" name="user_hash" id="userHashInput" class="input" required>
+            </div>
+            
+            <!-- Private Image Repository Section -->
+            <div class="repository-section">
+                <div class="repository-header">
+                    <i class="fas fa-lock mr-2"></i> Private Image Repository
+                </div>
+                <div class="repository-content">
+                    <div class="filter-search-box">
+                        <div class="field">
+                            <label class="label">Filter/Search</label>
+                            <div class="control has-icons-left">
+                                <input id="privateSearchInput" class="input" type="text" placeholder="Filter by name, tag, or description...">
+                                <span class="icon is-small is-left">
+                                    <i class="fas fa-search"></i>
+                                </span>
+                            </div>
+                        </div>
                     </div>
+                    <table id="privateImageTable" class="image-table">
+                        <thead>
+                            <tr>
+                                <th>Source</th>
+                                <th>Image Name</th>
+                                <th>Tag</th>
+                                <th>Size</th>
+                                <th>Last Updated</th>
+                                <th>Details</th>
+                                <th>Actions</th>
+                                <th>Label</th>
+                            </tr>
+                        </thead>
+                        <tbody id="privateImageTableBody"></tbody>
+                    </table>
                 </div>
-                <div class="control">
-                    <button type="button" id="uploadButton" class="button is-primary">Upload</button>
+            </div>
+            
+            <!-- Add New Images Section -->
+            <div class="add-images-container">
+                <button id="addImagesBtn" class="add-button">
+                    <i class="fas fa-plus"></i> Add New Images
+                </button>
+                
+                <div id="uploadOptions" class="upload-tab" style="display: none;">
+                    <div class="tab-nav">
+                        <div class="tab-item active" data-tab="localUpload">
+                            <i class="fas fa-upload mr-2"></i>Local Upload
+                        </div>
+                        <div class="tab-item" data-tab="fetchUrl">
+                            <i class="fas fa-cloud-download-alt mr-2"></i>Fetch from URLs
+                        </div>
+                    </div>
+                    
+                    <div class="tab-content">
+                        <!-- Local Upload Tab -->
+                        <div id="localUpload" class="tab-pane active">
+                            <form id="uploadForm" enctype="multipart/form-data">
+                                <div class="field">
+                                    <label class="label">Select .tar file</label>
+                                    <div class="control">
+                                        <input type="file" name="file" id="fileInput" class="input" accept=".tar" required>
+                                    </div>
+                                    <p class="help">Choose a Docker image tar file to upload</p>
+                                </div>
+                                <div class="control">
+                                    <button type="button" id="uploadButton" class="button is-primary">
+                                        <i class="fas fa-upload mr-2"></i>Upload Image
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                        
+                        <!-- Fetch from URLs Tab -->
+                        <div id="fetchUrl" class="tab-pane" style="display: none;">
+                            <div class="input-row">
+                                <div class="auth-dropdown">
+                                    <label class="label">Select private image registry auth</label>
+                                    <div class="select is-fullwidth">
+                                        <select id="registryAuth">
+                                            <option value="" selected>Select registry auth</option>
+                                        </select>
+                                    </div>
+                                    <p class="help">Choose authentication for private registries</p>
+                                </div>
+                                <button id="addAuthBtn" class="button">
+                                    <i class="fas fa-plus"></i> Registry Auth
+                                </button>
+                            </div>
+                            <div class="field">
+                                <label class="label">URL</label>
+                                <div class="control has-icons-left">
+                                    <input type="text" id="urlInput" class="input" placeholder="e.g., nvcr.io/nvidia/pytorch:24.11-py3">
+                                    <span class="icon is-small is-left">
+                                        <i class="fas fa-link"></i>
+                                    </span>
+                                </div>
+                                <p class="help">Enter the URL of the Docker image to fetch</p>
+                            </div>
+                            <div class="control">
+                                <button type="button" id="fetchButton" class="button is-primary">
+                                    <i class="fas fa-cloud-download-alt mr-2"></i>Fetch Image
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="uploadResult" class="notification is-hidden"></div>
                 </div>
-            </form>
-            <div id="uploadResult" class="notification is-hidden"></div>
+            </div>
         </div>
     </section>
 
@@ -113,14 +217,48 @@
         // Fetch and render images from API
         document.addEventListener('DOMContentLoaded', function() {
             fetchImageInfo();
-
+            // Add Images
+            document.getElementById("addImagesBtn").addEventListener("click", function() {
+                const uploadOptions = document.getElementById("uploadOptions");
+                
+                if (uploadOptions.style.display === "none" || uploadOptions.style.display === "") {
+                    uploadOptions.style.display = "block";
+                } else {
+                    uploadOptions.style.display = "none";
+                }
+            });
+            
+            // Tab
+            document.querySelectorAll('.tab-item').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    // Remove active class from all tabs
+                    document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+                    // Add active class to clicked tab
+                    this.classList.add('active');
+                    
+                    // Hide all tab panes
+                    document.querySelectorAll('.tab-pane').forEach(pane => pane.style.display = 'none');
+                    // Show the corresponding tab pane
+                    const tabId = this.getAttribute('data-tab');
+                    document.getElementById(tabId).style.display = 'block';
+                });
+            });
+            
+            // Search for public images
+            document.getElementById('publicSearchInput').addEventListener('keyup', function() {
+                filterTable('publicImageTableBody', this.value);
+            });
+            
+            // Search for private images
+            document.getElementById('privateSearchInput').addEventListener('keyup', function() {
+                filterTable('privateImageTableBody', this.value);
+            });
+            
+            // Upload from local for private images
             document.getElementById("uploadButton").addEventListener("click", function() {
                 var fileInput = document.getElementById("fileInput").files[0];
-                var userHashInput = document.getElementById("userHashInput").value;
                 var formData = new FormData();
-
                 formData.append("file", fileInput);
-                formData.append("user_hash", userHashInput);
 
                 api.postForm(`/me/upload-image`, formData)
                 .then(data => {
@@ -128,6 +266,8 @@
                     uploadResult.classList.remove("is-hidden");
                     uploadResult.classList.add(data.error ? "is-danger" : "is-success");
                     uploadResult.textContent = data.message || data.error;
+                    // Refresh image list after upload
+                    fetchImageInfo();
                 })
                 .catch(error => {
                     console.log("Error uploading image:", error);
@@ -137,59 +277,246 @@
                     uploadResult.textContent = "Error uploading image.";
                 });
             });
+
+            // Fetch from URL for private images
+            document.getElementById("fetchButton").addEventListener("click", function() {
+                const url = document.getElementById("urlInput").value;
+                const registryAuth = document.getElementById("registryAuth").value;
+                
+                if (!url) {
+                    alert("Please enter a URL");
+                    return;
+                }
+                // Attention: API is not ready yet
+                alert("fetch image from url");
+                return;
+                api.post(`/me/fetch-image`, {
+                    url: url,
+                    registry_auth: registryAuth
+                })
+                .then(data => {
+                    var uploadResult = document.getElementById("uploadResult");
+                    uploadResult.classList.remove("is-hidden");
+                    uploadResult.classList.add(data.error ? "is-danger" : "is-success");
+                    uploadResult.textContent = data.message || data.error;
+                    // Refresh image list after upload
+                    fetchImageInfo();
+                })
+                .catch(error => {
+                    console.log("Error fetching image:", error);
+                    var uploadResult = document.getElementById("uploadResult");
+                    uploadResult.classList.remove("is-hidden");
+                    uploadResult.classList.add("is-danger");
+                    uploadResult.textContent = "Error fetching image.";
+                });
+            });
         });
-        const userHash = 'demo-project';
+        
+        function filterTable(tableBodyId, query) {
+            const tableBody = document.getElementById(tableBodyId);
+            const rows = tableBody.getElementsByTagName('tr');
+            const lowerQuery = query.toLowerCase();
+            
+            for (let i = 0; i < rows.length; i++) {
+                const rowText = rows[i].textContent.toLowerCase();
+                if (rowText.includes(lowerQuery)) {
+                    rows[i].style.display = '';
+                } else {
+                    rows[i].style.display = 'none';
+                }
+            }
+        }
 
         function fetchImageInfo() {
-            api.get(`/me/images`)
+            api.get(`/me/image-info`)
                 .then(data => {
-                    const tableBody = document.querySelector('#imageTable tbody');
-                    tableBody.innerHTML = '';
+                    const publicTableBody = document.querySelector('#publicImageTableBody');
+                    const privateTableBody = document.querySelector('#privateImageTableBody');
+                    
+                    publicTableBody.innerHTML = ''; // Clear existing data
+                    privateTableBody.innerHTML = ''; // Clear existing data
 
-                    data.images.forEach(image => {
-                        const row = document.createElement('tr');
+                    // Traverse all repositories dynamically
+                    for (const [repository, images] of Object.entries(data.images)) {
+                        const isPublic = repository.includes('public') || repository.includes('10.100.100.1:5000');
+                        const tableBody = isPublic ? publicTableBody : privateTableBody;
+                        
+                        for (const [imageName, imageTags] of Object.entries(images)) {
+                            imageTags.forEach(tagData => {
+                                const row = document.createElement('tr');
 
-                        row.innerHTML = `
-                            <td>${image.registry_host}</td>
-                            <td>${image.name}</td>
-                            <td>${image.tag}</td>
-                            <td>${image.size}</td>
-                            <td>${new Date(image.created_at).toLocaleString()}</td>
-                            <td>${image.architecture}</td>
-                            <td>${image.os}</td>
-                            <td><button class="button is-small is-link" onclick="showDetails('${encodeURIComponent(JSON.stringify(image))}')">View</button></td>
-                        `;
+                                // Format data size
+                                const size = formatSize(tagData.size);
+                                
+                                if (isPublic) {
+                                    row.innerHTML = `
+                                        <td>${repository}</td>
+                                        <td>${imageName}</td>
+                                        <td>${tagData.tag}</td>
+                                        <td>${size}</td>
+                                        <td>${new Date(tagData.created_at || tagData.inserted_at).toLocaleString()}</td>
+                                        <td><a href="#" class="view-button" onclick="showDetails('${encodeURIComponent(JSON.stringify(tagData))}')"><i class="fas fa-circle-info"></i> View</a></td>
+                                        <td><a href="#" class="create-from-label" data-repository="${repository}" data-image="${imageName}" data-tag="${tagData.tag}" data-details='${encodeURIComponent(JSON.stringify(tagData))}'><i class="fas fa-square-plus"></i>Create from</a></td>
+                                        <td><span class="label-badge"><i class="fas fa-tag mr-1"></i>Models</span></td>
+                                    `;
+                                } else {
+                                    // Determine source (Tar file, Google Cloud, etc.)
+                                    const source = determineSource(tagData);
+                                    row.innerHTML = `
+                                        <td>${source}</td>
+                                        <td>${imageName}</td>
+                                        <td>${tagData.tag}</td>
+                                        <td>${size}</td>
+                                        <td>${new Date(tagData.created_at || tagData.inserted_at).toLocaleString()}</td>
+                                        <td><a href="#" class="view-button" onclick="showDetails('${encodeURIComponent(JSON.stringify(tagData))}')"><i class="fas fa-circle-info"></i> View</a></td>
+                                        <td><a href="#" class="create-from-label" data-repository="${repository}" data-image="${imageName}" data-tag="${tagData.tag}" data-details='${encodeURIComponent(JSON.stringify(tagData))}'><i class="fas fa-square-plus"></i>Create from</a></td>
+                                        <td><span class="label-badge"><i class="fas fa-tag mr-1"></i>Models</span></td>
+                                    `;
+                                }
 
-                        tableBody.appendChild(row);
+                                tableBody.appendChild(row);
+                            });
+                        }
+                    }
+                    
+                    // "Create from" buttons
+                    document.querySelectorAll('.create-from-label').forEach(label => {
+                        label.addEventListener('click', function(e) {
+                            // Get data attributes
+                            const repository = this.getAttribute('data-repository');
+                            const imageName = this.getAttribute('data-image');
+                            const tag = this.getAttribute('data-tag');
+                            const encodedDetails = this.getAttribute('data-details');
+                            
+                            if (encodedDetails) {
+                                const tagData = JSON.parse(decodeURIComponent(encodedDetails));
+                                // Add default_entrypoint and default_ports to URL if available
+                                let url = `launch-new.html?repository=${encodeURIComponent(repository)}&image=${encodeURIComponent(imageName)}&tag=${encodeURIComponent(tag)}`;
+                                if (tagData.default_entrypoint) {
+                                    url += `&entrypoint=${encodeURIComponent(tagData.default_entrypoint)}`;
+                                }
+                                if (tagData.default_ports) {
+                                    url += `&ports=${encodeURIComponent(JSON.stringify(tagData.default_ports))}`;
+                                }
+                                // Navigate to the launch-new page
+                                window.location.href = url;
+                            } else {
+                                // Fallback to basic URL if data not found
+                                const url = `launch-new.html?repository=${encodeURIComponent(repository)}&image=${encodeURIComponent(imageName)}&tag=${encodeURIComponent(tag)}`;
+                                window.location.href = url;
+                            }
+                            // Prevent the default behavior
+                            e.preventDefault();
+                        });
                     });
                 })
                 .catch(error => console.error('Error fetching image data:', error));
+        }
+        
+        function determineSource(tagData) {
+            // Attention: field in API is not ready yet
+            return "Local Upload";
+        }
+        
+        function formatSize(sizeInBytes) {
+            if (!sizeInBytes) return "Unknown";
+            
+            const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+            let size = sizeInBytes;
+            let unitIndex = 0;
+            
+            while (size >= 1024 && unitIndex < units.length - 1) {
+                size /= 1024;
+                unitIndex++;
+            }
+            
+            return `${size.toFixed(2)} ${units[unitIndex]}`;
         }
 
         function showDetails(details) {
             details = JSON.parse(decodeURIComponent(details)); // Parse the JSON string
 
+            // Create label items
+            // const labelItems = details.labels ? 
+            //     Object.entries(details.labels).map(
+            //         ([key, value]) => `<li><strong>${key}:</strong> ${value}</li>`
+            //     ).join('') : '<li>No labels available</li>';
+            
+            // Format ports if available
+            const portsDisplay = details.default_ports ? 
+                Object.entries(details.default_ports).map(
+                    ([port, target]) => `${port} → ${target}`
+                ).join('<br>') : 'Not specified';
+            
+            // Format entrypoint if available - could be string or array
+            let entrypointDisplay = 'Not specified';
+            if (details.default_entrypoint) {
+                if (Array.isArray(details.default_entrypoint)) {
+                    entrypointDisplay = details.default_entrypoint.join(' ');
+                } else {
+                    entrypointDisplay = details.default_entrypoint;
+                }
+            }
+
             const detailContent = `
-                <p><strong>Description:</strong> ${details.description || 'None'}</p>
-                <p><strong>Digest:</strong> ${details.digest}</p>
-                <p><strong>Maintainer:</strong> ${details.maintainer || 'None'}</p>
-                <p><strong>Username:</strong> ${details.username}</p>
-                <p><strong>Created At:</strong> ${new Date(details.created_at).toLocaleString()}</p>
-                <p><strong>Inserted At:</strong> ${new Date(details.inserted_at).toLocaleString()}</p>
-                <p><strong>Default Entrypoint:</strong> ${details.default_entrypoint || 'None'}</p>
-                <p><strong>Default Ports:</strong> ${details.default_ports || 'None'}</p>
-                <p><strong>Full Name:</strong> ${details.full_name}</p>
+                <div class="field">
+                    <label class="label"><i class="fas fa-fingerprint mr-2"></i>Digest</label>
+                    <div class="control">
+                        <p>${details.digest || 'Not available'}</p>
+                    </div>
+                </div>
+                <div class="field">
+                    <label class="label"><i class="fa-regular fa-building mr-2"></i>Maintainer</label>
+                    <div class="control">
+                        <p>${details.maintainer || 'Not available'}</p>
+                    </div>
+                </div>
+                <div class="field">
+                    <label class="label"><i class="fas fa-microchip mr-2"></i>Architecture</label>
+                    <div class="control">
+                        <p>${details.architecture || 'Not available'}</p>
+                    </div>
+                </div>
+                <div class="field">
+                    <label class="label"><i class="fas fa-display mr-2"></i>OS</label>
+                    <div class="control">
+                        <p>${details.os || 'Not available'}</p>
+                    </div>
+                </div>
+                <div class="field">
+                    <label class="label"><i class="fas fa-keyboard mr-2"></i>Default Ports</label>
+                    <div class="control">
+                        <p>${portsDisplay}</p>
+                    </div>
+                </div>
+                <div class="field">
+                    <label class="label"><i class="fas fa-terminal mr-2"></i>Default Entrypoint</label>
+                    <div class="control">
+                        <p>${entrypointDisplay}</p>
+                    </div>
+                </div>
+                <div class="field">
+                    <label class="label"><i class="fas fa-info mr-2"></i>Description</label>
+                    <div class="control">
+                        <p>${details.description || 'No description available'}</p>
+                    </div>
+                </div>
+
             `;
 
             const detailModal = document.createElement('div');
             detailModal.classList.add('modal', 'is-active');
             detailModal.innerHTML = `
-                <div class="modal-background"></div>
+                <div class="modal-background" onclick="closeModal()"></div>
                 <div class="modal-content">
                     <div class="box">
-                        <h4 class="title is-5">Image Details</h4>
+                        <h4 class="title is-5"><i class="fas fa-info-circle mr-2"></i>Image Details</h4>
                         ${detailContent}
-                        <button class="button is-small is-danger is-fullwidth" onclick="closeModal()">Close</button>
+                        <div class="field is-grouped is-grouped-right">
+                            <div class="control">
+                                <button class="button" onclick="closeModal()"><i class="fas fa-times mr-2"></i>Close</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <button class="modal-close is-large" aria-label="close" onclick="closeModal()"></button>
