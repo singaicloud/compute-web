@@ -114,11 +114,62 @@ class SingAPI {
         } 
         return false;
     }
+
+    async signup(username, password, firstName, lastName, inviteCode, testMode = true){
+        if(!username || !password || !firstName || !lastName || !inviteCode){
+            return{
+                success: false,
+                error: "All fields are required"
+            }
+        }
+        if(password.length < 8){
+            return{
+                success: false,
+                error: "Password must be at least 8 characters"
+            }
+        }
+        ``
+        try{
+            const response = await this.post("/create_user",{
+                username,
+                password,
+                first_name: firstName,
+                last_name: lastName,
+                invite_code: inviteCode,
+                test: testMode
+            });
+            return{
+                success: true,
+                data: response
+            }
+        }catch(error){
+            console.error("Signup error: ", error);
+            let errorMessage = "Signup failed"
+            if(error.responseData && error.responseData.error){
+                errorMessage = error.responseData.error;
+            }else if (error.response){
+                try {
+                    const errorData = JSON.parse(error.response);
+                    errorMessage = errorData.error || errorMessage;
+                } catch (e) {
+                    errorMessage = error.response;
+                }
+                }
+                return{
+                    success: false,
+                    error: errorMessage
+                }
+    
+        }
+
+    }
 }
 
 // read token from cookie
 const token = document.cookie.split(";").find((c) => c.startsWith("token="))?.split("=")[1];
-var baseUrl = window.location.hostname === "my.singaicloud.com" 
-    ? "https://api.singaicloud.com" 
-    : "https://api.nova.singaicloud.com";
+var baseUrl = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
+    ? "http://localhost:8080/api"  // For local development with proxy
+    : window.location.hostname === "my.singaicloud.com"
+        ? "https://api.singaicloud.com"
+        : "https://api.nova.singaicloud.com";
 var api = new SingAPI(token, baseUrl);
