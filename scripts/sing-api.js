@@ -130,7 +130,7 @@ class SingAPI {
         }
         ``
         try{
-            const response = await this.post("/create_user",{
+            const response = await this.post("/create-user",{
                 username,
                 password,
                 first_name: firstName,
@@ -167,9 +167,10 @@ class SingAPI {
 
 // read token from cookie
 const token = document.cookie.split(";").find((c) => c.startsWith("token="))?.split("=")[1];
-var baseUrl = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
-    ? "http://localhost:8080/api"  // For local development with proxy
+var baseUrl = "https://api.nova.singaicloud.com"; // Direct to API
+/*var baseUrl = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
+    ? "http://localhost:8080/api"  // Use proxy in development
     : window.location.hostname === "my.singaicloud.com"
         ? "https://api.singaicloud.com"
-        : "https://api.nova.singaicloud.com";
+        : "https://api.nova.singaicloud.com";*/
 var api = new SingAPI(token, baseUrl);
