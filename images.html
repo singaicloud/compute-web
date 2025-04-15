@@ -215,7 +215,7 @@
                             <div class="field">
                                 <label class="label"><b>Image URL</b></label>
                                 <div class="control has-icons-left">
-                                    <input type="text" id="urlInput" class="input" placeholder="username/image:tag (e.g., pytorch/pytorch:2.0.0, tensorflow/tensorflow:latest)">
+                                    <input type="text" id="urlInput" class="input" placeholder="image:tag (e.g., nginx:stable-perl, tensorflow:latest)">
                                     <span class="icon is-small is-left">
                                         <i class="fas fa-link"></i>
                                     </span>
@@ -665,12 +665,15 @@
             // Fetch from URL for private images
             document.getElementById("fetchButton").addEventListener("click", function() {
                 const url = document.getElementById("urlInput").value;
+                let formData = new FormData();
                 // const registryAuth = document.getElementById("registryAuth").value; // Temporarily commented out
                 
                 if (!url) {
                     alert("Please enter a URL");
                     return;
                 }
+                console.log("Fetching image from URL:", url);
+                formData.append("image", url);
                 
                 // hide previous result notification
                 const uploadResult = document.getElementById("uploadResult");
@@ -686,8 +689,6 @@
                 // configure and show progress modal
                 topProgressTitle.textContent = "Fetch progress";
                 topProgressBar.value = 0;
-                topProgressBar.classList.remove("is-primary");
-                topProgressBar.classList.add("is-info");
                 topProgressPercentage.textContent = "0%";
                 topProgressStatus.textContent = "Initializing fetch...";
                 topProgressContainer.classList.add("visible");
@@ -695,11 +696,20 @@
                 // disable all buttons during fetch
                 disableAllButtons();
                 
-                // simulated progress for demo since the API is not ready yet
+                // Create XHR for potential cancellation
+                const xhr = new XMLHttpRequest();
+                currentUploadXHR = xhr;
+                
+                xhr.open('POST', api.baseUrl + '/me/upload-link', true);
+                if (api.token) {
+                    xhr.setRequestHeader('Authorization', 'Bearer ' + api.token);
+                }
+                
+                // Set up a simulated progress since the actual pull doesn't provide progress
                 let progress = 0;
-                const interval = setInterval(() => {
-                    progress += 5;
-                    if (progress <= 100) {
+                const progressInterval = setInterval(() => {
+                    progress += 2;
+                    if (progress <= 98) { // Only go up to 98% for simulated progress
                         // update progress bar
                         topProgressBar.value = progress;
                         topProgressPercentage.textContent = progress + "%";
@@ -713,56 +723,84 @@
                         } else {
                             topProgressStatus.textContent = "Finalizing...";
                         }
-                    } else {
-                        clearInterval(interval);
+                    }
+                }, 300);
+                
+                // Handle completion
+                xhr.onload = function() {
+                    clearInterval(progressInterval);
+                    topProgressBar.value = 100;
+                    topProgressPercentage.textContent = "100%";
+                    topProgressStatus.textContent = "Completed";
+                    
+                    setTimeout(() => {
                         topProgressContainer.classList.remove("visible");
                         
-                        // reset progress bar class for future use
-                        topProgressBar.classList.remove("is-info");
-                        topProgressBar.classList.add("is-primary");
-                        
-                        // Show result
                         uploadResult.classList.remove("is-hidden");
-                        uploadResult.classList.add("is-warning");
-                        uploadResult.textContent = "API for fetching images from URL is not ready yet.";
                         
                         // Re-enable all buttons
                         enableAllButtons();
                         
-                        // Refresh image list (would be done after actual fetch)
-                        // fetchImageInfo();
-                    }
-                }, 200);
+                        // Reset current XHR reference
+                        currentUploadXHR = null;
+                        
+                        if (xhr.status >= 200 && xhr.status < 300) {
+                            try {
+                                const response = JSON.parse(xhr.responseText);
+                                if (response.error) {
+                                    uploadResult.classList.remove("is-success");
+                                    uploadResult.classList.add("is-danger");
+                                    uploadResult.textContent = response.error;
+                                } else {
+                                    uploadResult.classList.remove("is-danger");
+                                    uploadResult.classList.add("is-success");
+                                    uploadResult.textContent = response.message || "Image successfully fetched from URL";
+                                    
+                                    // Refresh image list
+                                    fetchImageInfo();
+                                }
+                            } catch (e) {
+                                uploadResult.classList.remove("is-success");
+                                uploadResult.classList.add("is-danger");
+                                uploadResult.textContent = "Error processing server response";
+                            }
+                        } else {
+                            uploadResult.classList.remove("is-success");
+                            uploadResult.classList.add("is-danger");
+                            try {
+                                const response = JSON.parse(xhr.responseText);
+                                uploadResult.textContent = response.error || "Failed to fetch image from URL";
+                            } catch (e) {
+                                uploadResult.textContent = "Failed to fetch image from URL: " + xhr.status;
+                            }
+                        }
+                    }, 1000);
+                };
                 
-                // not ready yet
-                alert("fetch image from url");
-                return;
-                
-                /* not ready yet
-                api.post(`/me/fetch-image`, {
-                    url: url,
-                    // registry_auth: registryAuth
-                })
-                .then(data => {
+                // Handle errors
+                xhr.onerror = function() {
+                    clearInterval(progressInterval);
                     topProgressContainer.classList.remove("visible");
-                    uploadResult.classList.remove("is-hidden");
-                    uploadResult.classList.add(data.error ? "is-danger" : "is-success");
-                    uploadResult.textContent = data.message || data.error;
-                    // Re-enable all buttons
-                    enableAllButtons();
-                    // Refresh image list after fetch
-                    fetchImageInfo();
-                })
-                .catch(error => {
-                    topProgressContainer.classList.remove("visible");
-                    console.log("Error fetching image:", error);
-                    uploadResult.classList.remove("is-hidden");
+                    uploadResult.classList.remove("is-hidden", "is-success");
                     uploadResult.classList.add("is-danger");
-                    uploadResult.textContent = "Error fetching image.";
+                    uploadResult.textContent = "Network error during image fetch";
+                    
                     // Re-enable all buttons
                     enableAllButtons();
-                });
-                */
+                    
+                    // Reset current XHR reference
+                    currentUploadXHR = null;
+                };
+                
+                // Handle cancellation
+                xhr.onabort = function() {
+                    clearInterval(progressInterval);
+                    console.log("Image fetch aborted by user");
+                };
+                
+                // Send the request with the image URL
+                console.log("Sending request with image URL:", formData);
+                xhr.send(formData);
             });
         });
         

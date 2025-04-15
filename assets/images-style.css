@@ -698,11 +698,6 @@ progress.progress.is-primary::-webkit-progress-value {
     transition: width 0.3s ease;
 }
 
-progress.progress.is-info::-webkit-progress-value {
-    background-color: #3298dc;
-    transition: width 0.3s ease;
-}
-
 #uploadProgressText, #fetchStatusText {
     margin-top: 0.5rem;
     font-size: 0.85rem;
