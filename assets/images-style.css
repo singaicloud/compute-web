@@ -251,12 +251,6 @@
     margin-bottom: 0.3rem;
 }
 
-.help {
-    font-size: 0.75rem;
-    margin-top: 0.3rem;
-    color: #757575;
-}
-
 /* Override button styles to match theme */
 .button {
     border-radius: 6px;
@@ -511,16 +505,57 @@ select:focus {
 }
 
 /* File input styling */
+.file-input-container {
+    display: flex;
+    align-items: flex-start;
+    width: 100%;
+    /* gap: 10px; */
+}
+
+.image-name-input {
+    flex: 1;
+    max-width: 200px;
+    margin-right: 6px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+.image-name-input input {
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    padding: 0.5rem;
+    height: 38px;
+    width: 100%;
+    font-size: 0.85rem;
+    margin: 0;
+    box-sizing: border-box;
+}
+
+.image-name-input input:hover {
+    border-color: #b5b5b5;
+}
+
+.image-name-input input:focus {
+    border-color: var(--brand-color);
+    outline: none;
+    box-shadow: none;
+}
+
 .file-input-wrapper {
-    margin-bottom: 0.5rem;
+    flex: 2;
+    margin-bottom: 0;
 }
 
 .file-input-wrapper input[type="file"] {
     border: 1px solid var(--border-color);
-    border-radius: 4px;
+    border-radius: 6px;
     padding: 0.5rem;
     width: 100%;
     background-color: white;
+    height: 38px;
+    margin: 0;
+    box-sizing: border-box;
 }
 
 .file-input-wrapper input[type="file"]:hover {
@@ -583,7 +618,8 @@ select:focus {
 .help {
     color: #666;
     font-size: 0.85rem;
-    margin-top: 0.25rem;
+    margin-top: 4px;
+    line-height: 1.4;
 }
 
 .help code {
@@ -659,11 +695,6 @@ progress.progress::-webkit-progress-bar {
 
 progress.progress.is-primary::-webkit-progress-value {
     background-color: var(--brand-color);
-    transition: width 0.3s ease;
-}
-
-progress.progress.is-info::-webkit-progress-value {
-    background-color: #3298dc;
     transition: width 0.3s ease;
 }
 
@@ -785,4 +816,37 @@ progress.progress.is-info::-webkit-progress-value {
 @keyframes spinAround {
     from { transform: rotate(0deg); }
     to { transform: rotate(359deg); }
+}
+
+.image-name-input input.is-danger {
+    border-color: #ff3860;
+    border-width: 1px;
+    box-shadow: 0 0 0 1px rgba(255, 56, 96, 0.2);
+}
+
+.image-name-input input.is-danger:hover,
+.image-name-input input.is-danger:focus {
+    border-color: #ff3860;
+    border-width: 1px;
+    box-shadow: 0 0 0 1px rgba(255, 56, 96, 0.2);
+}
+
+/* Help text styling for validation errors */
+.validation-message-container {
+    width: 100%;
+    min-height: 0;
+    margin: 2px 0 2px 0;
+    line-height: 1;
+}
+
+.validation-message.is-danger {
+    color: #ff3860;
+    font-size: 0.75rem;
+    margin: 0;
+    padding: 0;
+    line-height: 1;
+}
+
+#dockerfileUpload .help {
+    margin-top: 4px;
 }
