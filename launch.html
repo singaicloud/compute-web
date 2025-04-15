@@ -82,7 +82,7 @@
                         job_name: document.querySelector('input[name="job_name"]').value || 'pytorch-dist-mnist-nccl',
                         master_image: document.querySelector('select[name="master_image"]').value || 'pytorch-dist-mnist-test:1.0',
                         <!-- master_replicas: parseInt(document.querySelector('input[name="master_replicas"]').value) || 1, -->
-                        worker_replicas: parseInt(document.querySelector('input[name="worker_replicas"]').value) || 2,
+                        node_replicas: parseInt(document.querySelector('input[name="node_replicas"]').value) || 2,
                         cpu_limit: parseInt(document.querySelector('input[name="cpu_limit"]').value) || 1,
                         memory_limit: document.querySelector('input[name="memory_limit"]').value || '256Mi',
                         gpu_limit: parseInt(document.querySelector('input[name="gpu_limit"]').value) || 1,
@@ -190,13 +190,13 @@
                     </div>
                 </div>
                 <div class="column is-3 field">
-                    <label class="label">Worker Numbers</label>
+                    <label class="label">node Numbers</label>
                     <div class="control">
-                        <input class="input" type="text" name="worker_replicas" value="1" placeholder="1">
+                        <input class="input" type="text" name="node_replicas" value="1" placeholder="1">
                     </div>
                 </div>
                 <div class="column is-3 field">
-                    <label class="label">GPU Number pre Worker</label>
+                    <label class="label">GPU Number pre node</label>
                     <div class="control">
                         <input class="input" type="text" name="gpu_limit" value="1" placeholder="1">
                     </div>
