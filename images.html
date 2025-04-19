@@ -107,7 +107,6 @@
                     <table id="privateImageTable" class="image-table">
                         <thead>
                             <tr>
-                                <th>Source</th>
                                 <th>Image Name</th>
                                 <th>Tag</th>
                                 <th>Size</th>
@@ -161,8 +160,14 @@
                                 <div id="dockerTarUpload" class="upload-type-container">
                                     <div class="field">
                                         <label class="label"><b>Select Image File (.tar)</b></label>
-                                        <div class="file-input-wrapper">
-                                            <input type="file" name="file" id="fileInput" accept=".tar" required>
+                                        <div class="file-input-container">
+                                            <div class="image-name-input">
+                                                <input type="text" name="tar-image-name" id="tarImageName" placeholder="image:tag (default tag is latest)">
+                                                <div class="validation-message-container"></div>
+                                            </div>
+                                            <div class="file-input-wrapper">
+                                                <input type="file" name="file" id="fileInput" accept=".tar" required>
+                                            </div>
                                         </div>
                                         <p class="help">image tar file exported by <code>docker save</code></p>
                                     </div>
@@ -172,12 +177,12 @@
                                     <div class="field">
                                         <label class="label"><b>Select Project Package (.zip/.rar)</b></label>
                                         <div class="file-input-container">
-                                            <!-- 
+                                            
                                             <div class="image-name-input">
-                                                <input type="text" name="dockerfile-image-name" id="dockerfileImageName" placeholder="Image name">
+                                                <input type="text" name="dockerfile-image-name" id="dockerfileImageName" placeholder="image:tag (default tag is latest)">
                                                 <div class="validation-message-container"></div>
                                             </div> 
-                                            -->
+                                            
                                             <div class="file-input-wrapper">
                                                 <input type="file" name="project-file" id="projectFileInput" accept=".zip,.rar" required>
                                             </div>
@@ -271,8 +276,11 @@
     </footer>
 
     <script>
-        // Variable to store the current XHR request for cancellation
+        // store current XHR request for cancellation
         let currentUploadXHR = null;
+        
+        // time in ms to display "completed" status
+        const COMPLETION_DISPLAY_TIME_MS = 60000; 
         
         // frozen effect when uploading or fetching images
         function disableAllButtons() {
@@ -346,9 +354,36 @@
 
         // Fetch and render images from API
         document.addEventListener('DOMContentLoaded', function() {
+
+            // Status Displaying: track image status from localStorage to ensure the display of the newest status
+            // it is used to display the status of the image even when the page is refreshed
+            imageStatusMap = {};
+            try {
+                // load completion timestamps from localStorage
+                const savedTimestamps = localStorage.getItem('imageCompletionTimestamps');
+                if (savedTimestamps) {
+                    completionTimestamps = JSON.parse(savedTimestamps);
+                    // clear the timestamps that are older than the predefined threshold
+                    const currentTime = Date.now();
+                    for (const imageId in completionTimestamps) {
+                        if (currentTime - completionTimestamps[imageId] > COMPLETION_DISPLAY_TIME_MS) {
+                            delete completionTimestamps[imageId];
+                        }
+                    }
+                    // save after updating and cleaning up
+                    localStorage.setItem('imageCompletionTimestamps', JSON.stringify(completionTimestamps));
+                } else {
+                    completionTimestamps = {};
+                }
+            } catch (e) {
+                console.error('Error loading completion timestamps from localStorage:', e);
+                completionTimestamps = {};
+            }
+            
+            // Image Info Fetching: fetch image info from API
             fetchImageInfo();
             
-            // Setup cancel upload button
+            // Cancel Upload Button: setup cancel upload button
             document.getElementById("cancelUpload").addEventListener("click", function() {
                 if (currentUploadXHR) {
                     // Abort the current XHR request
@@ -364,8 +399,31 @@
                     currentUploadXHR = null;
                 }
             });
+
+            // Status Displaying: save completion timestamps to localStorage when the page is unloaded
+            window.addEventListener('beforeunload', function() {
+                if (autoRefreshInterval) {
+                    clearInterval(autoRefreshInterval);
+                    autoRefreshInterval = null;
+                }
+                // Save the completion timestamps to localStorage
+                try {
+                    localStorage.setItem('imageCompletionTimestamps', JSON.stringify(completionTimestamps));
+                } catch (e) {
+                    console.error('Error saving completion timestamps to localStorage:', e);
+                }
+                
+                // Clear the status tracking object
+                imageStatusMap = {};
+                
+                // Also abort unfinished XHR requests when the page is unloaded
+                if (currentUploadXHR) {
+                    currentUploadXHR.abort();
+                    currentUploadXHR = null;
+                }
+            });
             
-            // Add Images
+            // Add Images Button: show or hide upload plane
             document.getElementById("addImagesBtn").addEventListener("click", function() {
                 const uploadOptions = document.getElementById("uploadOptions");
                 if (uploadOptions.style.display === "none" || uploadOptions.style.display === "") {
@@ -375,7 +433,7 @@
                 }
             });
             
-            // Tab
+            // Switch Tabs: hightlight the chosen tab and hide other tabs
             document.querySelectorAll('.tab-item').forEach(tab => {
                 tab.addEventListener('click', function() {
                     document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
@@ -386,7 +444,7 @@
                 });
             });
             
-            // Upload Type Radio Change
+            // Upload Type Radios: show or hide the corresponding upload page upon selection
             document.querySelectorAll('input[name="uploadType"]').forEach(radio => {
                 radio.addEventListener('change', function() {
                     const selectedType = this.value;
@@ -402,14 +460,27 @@
                 });
             });
             
-            // File input validation
+            // Validation for Tar File when Selecting a File: validate if the selected file is .tar and trigger image name validation
             document.getElementById('fileInput').addEventListener('change', function() {
                 const file = this.files[0];
-                if (file && !file.name.toLowerCase().endsWith('.tar')) {
-                    alert("Please select a valid .tar file");
-                    this.value = '';
+                if (file) {
+                    const fileName = file.name.toLowerCase();
+                    if (!fileName.endsWith('.tar')) {
+                        alert("Please select a valid .tar file");
+                        this.value = '';
+                    } else {
+                        // Trigger validation of the image name input when file selection changes
+                        const tarImageNameInput = document.getElementById('tarImageName');
+                        tarImageNameInput.dispatchEvent(new Event('input'));
+                    }
+                } else {
+                    // If file selection is cleared, also trigger validation
+                    const tarImageNameInput = document.getElementById('tarImageName');
+                    tarImageNameInput.dispatchEvent(new Event('input'));
                 }
             });
+            
+            // Validation for Project Package File when Selecting a File: validate if the selected file is .zip or .rar and trigger image name validation
             document.getElementById('projectFileInput').addEventListener('change', function() {
                 const file = this.files[0];
                 if (file) {
@@ -417,48 +488,134 @@
                     if (!fileName.endsWith('.zip') && !fileName.endsWith('.rar')) {
                         alert("Only .zip and .rar files are supported for project packages");
                         this.value = '';
+                    } else {
+                        // Trigger validation of the image name input when file selection changes
+                        const dockerfileImageNameInput = document.getElementById('dockerfileImageName');
+                        dockerfileImageNameInput.dispatchEvent(new Event('input'));
+                    }
+                } else {
+                    // If file selection is cleared, also trigger validation
+                    const dockerfileImageNameInput = document.getElementById('dockerfileImageName');
+                    dockerfileImageNameInput.dispatchEvent(new Event('input'));
+                }
+            });
+            
+            // Validation for Dockerfile Image Name Input: validate the image name and tag
+            document.getElementById('dockerfileImageName').addEventListener('input', function() {
+                const value = this.value;
+                const messageContainer = this.parentNode.querySelector('.validation-message-container');
+                const imageInfo = value.trim();
+                let imageNameValue;
+                let tagValue;
+                if (imageInfo.includes(':')) {
+                    imageNameValue = imageInfo.split(':').slice(0, -1).join(':');
+                    tagValue = imageInfo.split(':').slice(-1)[0];
+                } else {
+                    imageNameValue = imageInfo;
+                    tagValue = '';
+                }
+                
+                // Clear existing validation message first to ensure consistent state
+                messageContainer.innerHTML = '';
+                
+                // Check if both image name is empty AND file is selected
+                const fileInput = document.getElementById('projectFileInput');
+                if (imageNameValue === '' && (fileInput.files && fileInput.files.length > 0)) {
+                    this.classList.add('is-danger');
+                    // Create and append validation message for empty name
+                    const message = document.createElement('p');
+                    message.className = 'validation-message is-danger';
+                    message.textContent = 'image name is required';
+                    messageContainer.appendChild(message);
+                } 
+                // Check image name value - only lowercase letters, numbers, dashes are allowed and should start with a lowercase letter
+                else if (imageNameValue !== '' && !(/^[a-z][a-z0-9-]*$/.test(imageNameValue))) {
+                    this.classList.add('is-danger');
+                    // Create and append validation message
+                    const message = document.createElement('p');
+                    message.className = 'validation-message is-danger';
+                    message.textContent = 'only lowercase letters, numbers, or dashes are allowed in image name';
+                    messageContainer.appendChild(message);
+                } else {
+                    this.classList.remove('is-danger');
+                }
+                
+                // Check tag value - allow lowercase letters, numbers, dashes and dots
+                if (tagValue !== '' && !/^[a-z0-9\-\.]*$/.test(tagValue)) {
+                    this.classList.add('is-danger');
+                    // Create validation message if not already present
+                    if (!messageContainer.querySelector('.validation-message')) {
+                        const message = document.createElement('p');
+                        message.className = 'validation-message is-danger';
+                        message.textContent = 'Tag must contain only lowercase letters, numbers, dashes, or dots';
+                        messageContainer.appendChild(message);
+                    }
+                }
+            }); 
+            
+            // Validation for Tar Image Name Input: validate the image name and tag
+            document.getElementById('tarImageName').addEventListener('input', function() {
+                const value = this.value;
+                const messageContainer = this.parentNode.querySelector('.validation-message-container');
+                const imageInfo = value.trim();
+                let imageNameValue;
+                let tagValue;
+                if (imageInfo.includes(':')) {
+                    imageNameValue = imageInfo.split(':').slice(0, -1).join(':');
+                    tagValue = imageInfo.split(':').slice(-1)[0];
+                } else {
+                    imageNameValue = imageInfo;
+                    tagValue = '';
+                }
+
+                // Clear existing validation message first to ensure consistent state
+                messageContainer.innerHTML = '';
+                // Check if both image name is empty AND file is selected
+                const fileInput = document.getElementById('fileInput');
+                if (imageNameValue === '' && (fileInput.files && fileInput.files.length > 0)) {
+                    this.classList.add('is-danger');
+                    // Create and append validation message for empty name
+                    const message = document.createElement('p');
+                    message.className = 'validation-message is-danger';
+                    message.textContent = 'image name is required';
+                    messageContainer.appendChild(message);
+                }
+                // Check image name value - only lowercase letters, numbers, dashes are allowed and should start with a lowercase letter
+                else if (imageNameValue !== '' && !(/^[a-z][a-z0-9-]*$/.test(imageNameValue))) {
+                    this.classList.add('is-danger');
+                    // Create and append validation message
+                    const message = document.createElement('p');
+                    message.className = 'validation-message is-danger';
+                    message.textContent = 'only lowercase letters, numbers, or dashes are allowed in image name';
+                    messageContainer.appendChild(message);
+                } else {
+                    this.classList.remove('is-danger');
+                }
+
+                // Check tag value - allow lowercase letters, numbers, dashes and dots
+                if (tagValue !== '' && !/^[a-z0-9\-\.]*$/.test(tagValue)) {
+                    this.classList.add('is-danger');
+                    // Create validation message if not already present
+                    if (!messageContainer.querySelector('.validation-message')) {
+                        const message = document.createElement('p');
+                        message.className = 'validation-message is-danger';
+                        message.textContent = 'Tag must contain only lowercase letters, numbers, dashes, or dots';
+                        messageContainer.appendChild(message);
                     }
                 }
             });
             
-            // validation for Dockerfile image name
-            /* document.getElementById('dockerfileImageName').addEventListener('input', function() {
-                const value = this.value;
-                const messageContainer = this.parentNode.querySelector('.validation-message-container');
-                
-                // docker image name validation: letters, numbers, dashes, underscore is not allowed
-                if (value && !/^[a-z][a-z0-9-]*$/.test(value)) {
-                    this.classList.add('is-danger');
-                    // Show validation message if not already present
-                    if (!messageContainer.querySelector('.validation-message')) {
-                        const message = document.createElement('p');
-                        message.className = 'validation-message is-danger';
-                        message.textContent = 'only lowercase letters, numbers, or dashes are allowed';
-                        message.style.color = '#ff3860';
-                        message.style.fontSize = '0.75rem';
-                        message.style.margin = '2px 0 2px 0';
-                        message.style.padding = '0';
-                        message.style.lineHeight = '1';
-                        messageContainer.appendChild(message);
-                    }
-                } else {
-                    this.classList.remove('is-danger');
-                    // Remove validation message if exists
-                    messageContainer.innerHTML = '';
-                }
-            }); */
-            
-            // Search for public images
+            // Query field for public images
             document.getElementById('publicSearchInput').addEventListener('keyup', function() {
                 filterTable('publicImageTableBody', this.value);
             });
             
-            // Search for private images
+            // Query field for private images
             document.getElementById('privateSearchInput').addEventListener('keyup', function() {
                 filterTable('privateImageTableBody', this.value);
             });
             
-            // Upload from local for private images
+            // Upload Button: upload from local for private images
             document.getElementById("uploadButton").addEventListener("click", function() {
                 const uploadType = document.querySelector('input[name="uploadType"]:checked').value;
                 let fileInput;
@@ -480,7 +637,7 @@
                 topProgressTitle.textContent = "Upload progress";
                 topProgressBar.value = 0;
                 topProgressPercentage.textContent = "0%";
-                topProgressStatus.textContent = "Preparing upload...";
+                topProgressStatus.textContent = "Uploading...";
                 topProgressContainer.classList.add("visible");
                 
                 // Disable all buttons during upload
@@ -501,20 +658,45 @@
                         return;
                     }
 
-                    // temporary: use filename as virtual image name, as the actual image name can be fetched from the tar file
-                    const imageName = fileInput.name.split('.').slice(0, -1).join('.');
+                    // Input type: image-name:tag
+                    const imageInfoInput = document.getElementById("tarImageName");
+                    const imageInfo = imageInfoInput.value.trim();
+                    let imageNameValue;
+                    let tagValue;
+                    if (imageInfo.includes(':')) {
+                        imageNameValue = imageInfo.split(':').slice(0, -1).join(':');
+                        tagValue = imageInfo.split(':').slice(-1).join(':');
+                    } else {
+                        imageNameValue = imageInfo;
+                        // if no tag is provided, use 'latest' as the default tag
+                        tagValue = 'latest';
+                    }
 
-                    // validate image name format
-                    /* if (!validateImageName(imageName)) {
-                        alert("Filename must start with a lowercase letter and contain only lowercase letters, numbers, or hyphens");
+                    // Validate custom image name if provided
+                    if (imageNameValue !== '' && !/^[a-z][a-z0-9-]*$/.test(imageNameValue)) {
+                        alert("Image name must start with a lowercase letter and contain only lowercase letters, numbers, or dashes (underscores are not allowed)");
                         topProgressContainer.classList.remove("visible");
                         enableAllButtons();
                         return;
-                    }*/
+                    } else if (imageNameValue === '') {
+                        alert("Image name is required");
+                        topProgressContainer.classList.remove("visible");
+                        enableAllButtons();
+                        return;
+                    }
 
+                    // Validate tag value if provided
+                    if (tagValue !== '' && !/^[a-z0-9\-\.]*$/.test(tagValue)) {
+                        alert("Tag must contain only lowercase letters, numbers, dashes, or dots");
+                        topProgressContainer.classList.remove("visible");
+                        enableAllButtons();
+                        return;
+                    }
+
+                    // Append form data and specify the endpoint
                     formData.append("file", fileInput);
-                    formData.append('tag', '1.0');
-                    formData.append('image-name', imageName);
+                    formData.append('tag', tagValue);
+                    formData.append('image-name', imageNameValue);
                     apiEndpoint = '/me/upload-image-tar';
                 } else if (uploadType === "dockerfile-package") {
                     fileInput = document.getElementById("projectFileInput").files[0];
@@ -524,8 +706,7 @@
                         enableAllButtons();
                         return;
                     }
-                    
-                    // validate file extension for project package
+                    // Validate file extension for project package
                     const fileName = fileInput.name.toLowerCase();
                     if (!fileName.endsWith('.zip') && !fileName.endsWith('.rar')) {
                         alert("Only .zip and .rar files are supported for project packages");
@@ -534,93 +715,102 @@
                         return;
                     }
 
-                    // validate image name format
-                    const imageNameValue = fileInput.name.split('.').slice(0, -1).join('.');
-                    if (!validateImageName(imageNameValue)) {
-                        alert("Filename must start with a lowercase letter and contain only lowercase letters, numbers, or hyphens");
+                    // Input type: image-name:tag
+                    const imageInfoInput = document.getElementById("dockerfileImageName");
+                    const imageInfo = imageInfoInput.value.trim();
+                    let imageNameValue;
+                    let tagValue;
+                    if (imageInfo.includes(':')) {
+                        imageNameValue = imageInfo.split(':').slice(0, -1).join(':');
+                        tagValue = imageInfo.split(':').slice(-1).join(':');
+                    } else {
+                        imageNameValue = imageInfo;
+                        tagValue = 'latest';
+                    }
+
+                    // Validate custom image name if provided
+                    if (imageNameValue !== '' && !/^[a-z][a-z0-9-]*$/.test(imageNameValue)) {
+                        alert("Image name must start with a lowercase letter and contain only lowercase letters, numbers, or dashes (underscores are not allowed)");
+                        topProgressContainer.classList.remove("visible");
+                        enableAllButtons();
+                        return;
+                    } else if (imageNameValue === '') {
+                        alert("Image name is required");
                         topProgressContainer.classList.remove("visible");
                         enableAllButtons();
                         return;
                     }
 
-                    formData.append("file", fileInput);
-                    formData.append('tag', '1.0');
-                    
-                    // attempt: get image name from input field, but currently we use filename as image name
-                    /*
-                    const imageNameInput = document.getElementById("dockerfileImageName");
-                    const imageName = imageNameInput.value.trim();
-                    const imageNameValue = imageName !== '' ? 
-                        imageName : 
-                        fileInput.name.split('.').slice(0, -1).join('.'); // remove the extension
-                    if (imageName !== '' && !/^[a-z][a-z0-9-]*$/.test(imageName)) {
-                        alert("Image name must start with a lowercase letter and contain only lowercase letters, numbers, or dashes (underscores are not allowed)");
+                    // Validate tag value if provided
+                    if (tagValue !== '' && !/^[a-z0-9\-\.]*$/.test(tagValue)) {
+                        alert("Tag must contain only lowercase letters, numbers, dashes, or dots");
                         topProgressContainer.classList.remove("visible");
                         enableAllButtons();
                         return;
                     }
-                    */
-                    
+
+                    // Append form data and specify the endpoint
+                    formData.append("file", fileInput);
+                    formData.append('tag', tagValue);
                     formData.append('image-name', imageNameValue);
                     apiEndpoint = '/me/upload-dockerfile';
                 }
                 
-                // update progress status with file info
+                // Update progress status with file info
                 topProgressStatus.textContent = `Uploading ${fileInput.name} (${formatFileSize(fileInput.size)})`;
-                
-                // create and configure XHR for progress tracking
+                // Create and configure XHR for progress tracking
                 const xhr = new XMLHttpRequest();
-                // Store XHR reference for cancellation
+                // Store XHR reference to control cancellation
                 currentUploadXHR = xhr;
                 
+                // Initialize the API endpoint with xhr.open
                 xhr.open('POST', api.baseUrl + apiEndpoint, true);
                 if (api.token) {
                     xhr.setRequestHeader('Authorization', 'Bearer ' + api.token);
                 }
+
+                // Update progress bar
                 xhr.upload.onprogress = function(e) {
                     if (e.lengthComputable) {
                         const percentComplete = Math.round((e.loaded / e.total) * 100);
-                        
-                        // update progress bar
                         topProgressBar.value = percentComplete;
                         topProgressPercentage.textContent = percentComplete + "%";
-                        
+                        // the progress demonstrates the percentage of the file that has been uploaded
                         if (percentComplete < 25) {
                             topProgressStatus.textContent = `Starting upload: ${formatFileSize(e.loaded)} of ${formatFileSize(e.total)}`;
-                        } else if (percentComplete < 50) {
-                            topProgressStatus.textContent = `Uploading: ${formatFileSize(e.loaded)} of ${formatFileSize(e.total)}`;
-                        } else if (percentComplete < 90) {
-                            topProgressStatus.textContent = `Transferring: ${formatFileSize(e.loaded)} of ${formatFileSize(e.total)}`;
                         } else {
-                            topProgressStatus.textContent = `Finalizing: ${formatFileSize(e.loaded)} of ${formatFileSize(e.total)}`;
+                            topProgressStatus.textContent = `Uploading: ${formatFileSize(e.loaded)} of ${formatFileSize(e.total)}`;
                         }
                     }
                 };
                 
-                // Upload completed
-                xhr.onload = function() {
+                // Upload Completed: asynchronously processing upon the completion of the upload
+                // this will not block user interaction and server will asynchronously build the image
+                xhr.upload.onload = function() {
                     topProgressContainer.classList.remove("visible");
-                    uploadResult.classList.remove("is-hidden");
-                    
-                    // re-enable all buttons
                     enableAllButtons();
-                    
+                    // Refresh the image list to show the status
+                    fetchImageInfo();
+                };
+                
+                // Image Creation Completed: the entire request is completed thus processing the response
+                xhr.onload = function() {
+                    uploadResult.classList.remove("is-hidden");
                     // Reset current XHR reference
                     currentUploadXHR = null;
                     
                     if (xhr.status >= 200 && xhr.status < 300) {
                         try {
                             const response = JSON.parse(xhr.responseText);
-                            if (response.message.includes("same digest") || response.message.includes("already exists")){
+                            if (response.error || response.message.includes("same digest") || response.message.includes("already exists")){
                                 uploadResult.classList.remove("is-success");
                                 uploadResult.classList.add("is-danger");
-                                uploadResult.textContent = response.message;
+                                uploadResult.textContent = response.error || response.message;
                             } else {
                                 uploadResult.classList.remove("is-danger");
                                 uploadResult.classList.add("is-success");
                                 uploadResult.textContent = response.message || "Upload successful";
                             }
-                            // refresh image list
                             fetchImageInfo();
                         } catch (e) {
                             uploadResult.classList.remove("is-success");
@@ -639,7 +829,7 @@
                     }
                 };
                 
-                // upload error
+                // Upload error
                 xhr.onerror = function() {
                     topProgressContainer.classList.remove("visible");
                     uploadResult.classList.remove("is-hidden", "is-success");
@@ -651,18 +841,20 @@
                     
                     // Reset current XHR reference
                     currentUploadXHR = null;
+
+                    fetchImageInfo();
                 };
                 
-                // cancel event
+                // Cancel event
                 xhr.onabort = function() {
-                    // console.log("Upload aborted by user");
+                    fetchImageInfo();
                 };
                 
-                // Start the upload
+                // Start uploading with xhr.send
                 xhr.send(formData);
             });
 
-            // Fetch from URL for private images
+            // Upload Button: fetch from URL for private images
             document.getElementById("fetchButton").addEventListener("click", function() {
                 const url = document.getElementById("urlInput").value;
                 let formData = new FormData();
@@ -675,111 +867,97 @@
                 console.log("Fetching image from URL:", url);
                 formData.append("image", url);
                 
-                // hide previous result notification
+                // Hide previous result notification
                 const uploadResult = document.getElementById("uploadResult");
                 uploadResult.classList.add("is-hidden");
-                
-                // setup center progress modal
+
+                // Setup center progress modal
                 const topProgressContainer = document.getElementById("topProgressContainer");
                 const topProgressBar = document.getElementById("topProgressBar");
                 const topProgressPercentage = document.getElementById("topProgressPercentage");
                 const topProgressStatus = document.getElementById("topProgressStatus");
                 const topProgressTitle = document.getElementById("topProgressTitle");
                 
-                // configure and show progress modal
+                // Configure and show progress modal
                 topProgressTitle.textContent = "Fetch progress";
                 topProgressBar.value = 0;
                 topProgressPercentage.textContent = "0%";
                 topProgressStatus.textContent = "Initializing fetch...";
                 topProgressContainer.classList.add("visible");
                 
-                // disable all buttons during fetch
+
                 disableAllButtons();
                 
                 // Create XHR for potential cancellation
                 const xhr = new XMLHttpRequest();
                 currentUploadXHR = xhr;
                 
+                // Initialize the API endpoint with xhr.open
                 xhr.open('POST', api.baseUrl + '/me/upload-link', true);
                 if (api.token) {
                     xhr.setRequestHeader('Authorization', 'Bearer ' + api.token);
                 }
                 
-                // Set up a simulated progress since the actual pull doesn't provide progress
-                let progress = 0;
-                const progressInterval = setInterval(() => {
-                    progress += 2;
-                    if (progress <= 98) { // Only go up to 98% for simulated progress
-                        // update progress bar
-                        topProgressBar.value = progress;
-                        topProgressPercentage.textContent = progress + "%";
-                        
-                        if (progress < 20) {
-                            topProgressStatus.textContent = "Connecting to registry...";
-                        } else if (progress < 50) {
-                            topProgressStatus.textContent = "Downloading image...";
-                        } else if (progress < 80) {
-                            topProgressStatus.textContent = "Processing image...";
-                        } else {
-                            topProgressStatus.textContent = "Finalizing...";
-                        }
-                    }
-                }, 300);
+                // Initial status
+                topProgressStatus.textContent = `Fetching image from URL: ${url}`;
                 
-                // Handle completion
-                xhr.onload = function() {
-                    clearInterval(progressInterval);
-                    topProgressBar.value = 100;
-                    topProgressPercentage.textContent = "100%";
-                    topProgressStatus.textContent = "Completed";
-                    
-                    setTimeout(() => {
-                        topProgressContainer.classList.remove("visible");
-                        
-                        uploadResult.classList.remove("is-hidden");
-                        
-                        // Re-enable all buttons
-                        enableAllButtons();
-                        
-                        // Reset current XHR reference
-                        currentUploadXHR = null;
-                        
-                        if (xhr.status >= 200 && xhr.status < 300) {
-                            try {
-                                const response = JSON.parse(xhr.responseText);
-                                if (response.error) {
-                                    uploadResult.classList.remove("is-success");
-                                    uploadResult.classList.add("is-danger");
-                                    uploadResult.textContent = response.error;
-                                } else {
-                                    uploadResult.classList.remove("is-danger");
-                                    uploadResult.classList.add("is-success");
-                                    uploadResult.textContent = response.message || "Image successfully fetched from URL";
-                                    
-                                    // Refresh image list
-                                    fetchImageInfo();
-                                }
-                            } catch (e) {
-                                uploadResult.classList.remove("is-success");
-                                uploadResult.classList.add("is-danger");
-                                uploadResult.textContent = "Error processing server response";
-                            }
-                        } else {
-                            uploadResult.classList.remove("is-success");
-                            uploadResult.classList.add("is-danger");
-                            try {
-                                const response = JSON.parse(xhr.responseText);
-                                uploadResult.textContent = response.error || "Failed to fetch image from URL";
-                            } catch (e) {
-                                uploadResult.textContent = "Failed to fetch image from URL: " + xhr.status;
-                            }
-                        }
-                    }, 1000);
+                // Upload progress event, although it will be very fast, we keep it for code consistency
+                xhr.upload.onprogress = function(e) {
+                    if (e.lengthComputable) {
+                        const percentComplete = Math.round((e.loaded / e.total) * 100);
+                        topProgressBar.value = percentComplete;
+                        topProgressPercentage.textContent = percentComplete + "%";
+                        topProgressStatus.textContent = `Sending request: ${percentComplete}%`;
+                    }
                 };
                 
-                // Handle errors
+                // Upload Completed: upon the completion of the upload, hide the progress bar and re-enable all buttons
+                xhr.upload.onload = function() {
+                    topProgressContainer.classList.remove("visible");
+                    enableAllButtons();
+                    // Refresh the image list to show the status
+                    fetchImageInfo();
+                };
+                
+                // Image Creation Completed: the entire request is completed thus processing the response
+                xhr.onload = function() {
+                    uploadResult.classList.remove("is-hidden");
+                    
+                    // Reset current XHR reference
+                    currentUploadXHR = null;
+                    
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                        try {
+                            const response = JSON.parse(xhr.responseText);
+                            if (response.error || response.message.includes("same digest") || response.message.includes("already exists")) {
+                                uploadResult.classList.remove("is-success");
+                                uploadResult.classList.add("is-danger");
+                                uploadResult.textContent = response.error || response.message;
+                            } else {
+                                uploadResult.classList.remove("is-danger");
+                                uploadResult.classList.add("is-success");
+                                uploadResult.textContent = response.message || "Image successfully fetched from URL";
+                            }
+                            fetchImageInfo();
+                        } catch (e) {
+                            uploadResult.classList.remove("is-success");
+                            uploadResult.classList.add("is-danger");
+                            uploadResult.textContent = "Error processing server response";
+                        }
+                    } else {
+                        uploadResult.classList.remove("is-success");
+                        uploadResult.classList.add("is-danger");
+                        try {
+                            const response = JSON.parse(xhr.responseText);
+                            uploadResult.textContent = response.error || "Failed to fetch image from URL";
+                        } catch (e) {
+                            uploadResult.textContent = "Failed to fetch image from URL: " + xhr.status;
+                        }
+                    }
+                };
+                
+                // Upload error
                 xhr.onerror = function() {
-                    clearInterval(progressInterval);
                     topProgressContainer.classList.remove("visible");
                     uploadResult.classList.remove("is-hidden", "is-success");
                     uploadResult.classList.add("is-danger");
@@ -790,21 +968,22 @@
                     
                     // Reset current XHR reference
                     currentUploadXHR = null;
+                    
+                    // Refresh the image list to show the status
+                    fetchImageInfo();
                 };
                 
-                // Handle cancellation
+                // Cancel event
                 xhr.onabort = function() {
-                    clearInterval(progressInterval);
-                    console.log("Image fetch aborted by user");
+                    fetchImageInfo();
                 };
                 
-                // Send the request with the image URL
-                console.log("Sending request with image URL:", formData);
+                // Send the request with xhr.send
                 xhr.send(formData);
             });
         });
         
-        // format file size in a human-readable format
+        // Tools: format file size in a human-readable format
         function formatFileSize(bytes) {
             if (bytes === 0) return '0 Bytes';
             
@@ -814,18 +993,12 @@
             
             return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
         }
-        
-        // validate image name format
-        function validateImageName(imageName) {
-            // It must be lowercase letters, numbers, dots(.), hyphens(-) or slashes(/), and start and end with a letter or number. Underscores(_) are not allowed.
-            const validPattern = /^[a-z0-9][a-z0-9\.\-\/]*[a-z0-9]$/;
-            return validPattern.test(imageName);
-        }
 
+        // Tools: filter the table based on the query
         function filterTable(tableBodyId, query) {
             const tableBody = document.getElementById(tableBodyId);
             const rows = tableBody.getElementsByTagName('tr');
-            const lowerQuery = query.toLowerCase();
+            const lowerQuery = query.toLowerCase(); // currently we perform case-insensitive matching
             
             for (let i = 0; i < rows.length; i++) {
                 const rowText = rows[i].textContent.toLowerCase();
@@ -837,6 +1010,12 @@
             }
         }
 
+        // 3 important variables for image status tracking
+        let autoRefreshInterval = null; // for tracking refresh interval
+        let imageStatusMap = {}; // for tracking image status, every image will be tracked
+        let completionTimestamps = {}; // for tracking the completion time of tags, and only when the image is in the "Done and Displayed" period will the value be stored
+        
+        // Image Table Builder: fetch image info from the server
         function fetchImageInfo() {
             api.get(`/me/images`)
                 .then(data => {
@@ -846,44 +1025,116 @@
                     publicTableBody.innerHTML = ''; // Clear existing data
                     privateTableBody.innerHTML = ''; // Clear existing data
 
-                    // Traverse all repositories dynamically
+                    // Check if there are any processing images
+                    let hasProcessingImages = false;
+                    
+                    // Check if we need to continue displaying the "just completed" badge
+                    const currentTime = Date.now();
+                    
+                    // Before processing, restore the stored completion timestamps from localStorage
+                    try {
+                        const savedTimestamps = localStorage.getItem('imageCompletionTimestamps');
+                        if (savedTimestamps) {
+                            const parsedTimestamps = JSON.parse(savedTimestamps);
+                            // Merge existing timestamps with restored timestamps
+                            completionTimestamps = { ...parsedTimestamps, ...completionTimestamps };
+                            
+                            // Clean up timestamps that are older than predefined threshold
+                            for (const imageId in completionTimestamps) {
+                                if (currentTime - completionTimestamps[imageId] > COMPLETION_DISPLAY_TIME_MS) {
+                                    delete completionTimestamps[imageId];
+                                }
+                            }
+                        }
+                    } catch (e) {
+                        console.error('Error loading completion timestamps from localStorage:', e);
+                    }
+                    
+                    // Traverse all items and build the table
                     for (const image of data.images) {
                         const isPublic = image.registry_host.includes('public') || image.registry_host.includes('10.100.100.1:5000');
                         const tableBody = isPublic ? publicTableBody : privateTableBody;
                         
+                        // Generate the unique ID for the image
+                        const imageId = `${image.registry_host}/${image.name}:${image.tag}`;
+                        
+                        // Check the image status
+                        if (image.status === 'PROCESSING') {
+                            hasProcessingImages = true;
+                            // Record the processing image
+                            imageStatusMap[imageId] = 'PROCESSING';
+                            // Clean up any existing completion timestamps
+                            if (completionTimestamps[imageId]) {
+                                delete completionTimestamps[imageId];
+                                localStorage.setItem('imageCompletionTimestamps', JSON.stringify(completionTimestamps));
+                            }
+                        } else if (image.status == 'DONE' && imageStatusMap[imageId] === 'PROCESSING') {
+                            // Image status changed from PROCESSING to DONE, mark it as just completed
+                            image.justCompleted = true;
+                            imageStatusMap[imageId] = image.status;
+                            completionTimestamps[imageId] = currentTime;
+                            localStorage.setItem('imageCompletionTimestamps', JSON.stringify(completionTimestamps));
+                        } else if (completionTimestamps[imageId]) {
+                            // Check if we should continue displaying the "just completed" badge
+                            const elapsedTime = currentTime - completionTimestamps[imageId];
+                            if (elapsedTime < COMPLETION_DISPLAY_TIME_MS) {
+                                image.justCompleted = true;
+                            } else {
+                                delete completionTimestamps[imageId];
+                                localStorage.setItem('imageCompletionTimestamps', JSON.stringify(completionTimestamps));
+                            }
+                        } else {
+                            imageStatusMap[imageId] = image.status;
+                        }
+                        
                         const row = document.createElement('tr');
+                        row.setAttribute('data-image-id', imageId);
                         const size = image.size + "GB";
                         
+                        // Process the status display
+                        let statusDisplay = '';
+                        if (image.status === 'PROCESSING') {
+                            statusDisplay = '<span class="processing-status"><i class="fas fa-spinner fa-spin"></i>processing</span>';
+                        } else if (image.status === 'FAILED') {
+                            statusDisplay = '<span class="failed-status"><i class="fas fa-exclamation-triangle"></i>failed</span>';
+                        } else if (image.justCompleted) {
+                            statusDisplay = '<span class="just-completed-badge"><i class="fas fa-check"></i>completed</span>';
+                        }
+                        
+                        // For PROCESSING images, disable the action buttons and add a style for processing rows
+                        const isProcessing = image.status === 'PROCESSING';
+                        const actionButtonsDisabled = isProcessing ? 'disabled style="pointer-events: none; opacity: 0.5; cursor: not-allowed;"' : '';
+                        if (isProcessing) {
+                            row.classList.add('processing-row');
+                        }
+
                         if (isPublic) {
                             row.innerHTML = `
                                 <td>${image.registry_host}</td>
-                                <td>${image.name}</td>
+                                <td>${image.name} ${statusDisplay}</td>
                                 <td>${image.tag}</td>
                                 <td>${size}</td>
                                 <td>${new Date(image.inserted_at).toLocaleString()}</td>
                                 <td><a href="#" class="view-button" onclick="showDetails('${encodeURIComponent(JSON.stringify(image))}')"><i class="fas fa-circle-info"></i> View</a></td>
                                 <td>
                                     <div class="action-buttons">
-                                        <a href="#" class="create-from-label" data-repository="${image.registry_host}" data-image="${image.name}" data-tag="${image.tag}" data-details='${encodeURIComponent(JSON.stringify(image))}'><i class="fas fa-square-plus"></i>Create from</a>
-                                        <a href="#" class="delete-button" data-repository="${image.registry_host}" data-image="${image.name}" data-tag="${image.tag}" data-digest="${image.digest}"><i class="fas fa-trash"></i> Delete</a>
+                                        <a href="#" class="create-from-label" data-repository="${image.registry_host}" data-image="${image.name}" data-tag="${image.tag}" data-details='${encodeURIComponent(JSON.stringify(image))}' ${actionButtonsDisabled}><i class="fas fa-square-plus"></i>Create from</a>
+                                        <a href="#" class="delete-button" data-repository="${image.registry_host}" data-image="${image.name}" data-tag="${image.tag}" data-digest="${image.digest}" ${actionButtonsDisabled}><i class="fas fa-trash"></i> Delete</a>
                                     </div>
                                 </td>
                                 <td><span class="label-badge"><i class="fas fa-tag mr-1"></i>Models</span></td>
                             `;
                         } else {
-                            // Determine source (Tar file, Google Cloud, etc.)
-                            const source = determineSource(image);
                             row.innerHTML = `
-                                <td>${source}</td>
-                                <td>${image.name}</td>
+                                <td>${image.name} ${statusDisplay}</td>
                                 <td>${image.tag}</td>
                                 <td>${size}</td>
                                 <td>${new Date(image.inserted_at).toLocaleString()}</td>
                                 <td><a href="#" class="view-button" onclick="showDetails('${encodeURIComponent(JSON.stringify(image))}')"><i class="fas fa-circle-info"></i> View</a></td>
                                 <td>
                                     <div class="action-buttons">
-                                        <a href="#" class="create-from-label" data-repository="${image.registry_host}" data-image="${image.name}" data-tag="${image.tag}" data-details='${encodeURIComponent(JSON.stringify(image))}'><i class="fas fa-square-plus"></i>Create from</a>
-                                        <a href="#" class="delete-button" data-repository="${image.registry_host}" data-image="${image.name}" data-tag="${image.tag}" data-digest="${image.digest}"><i class="fas fa-trash"></i> Delete</a>
+                                        <a href="#" class="create-from-label" data-repository="${image.registry_host}" data-image="${image.name}" data-tag="${image.tag}" data-details='${encodeURIComponent(JSON.stringify(image))}' ${actionButtonsDisabled}><i class="fas fa-square-plus"></i>Create from</a>
+                                        <a href="#" class="delete-button" data-repository="${image.registry_host}" data-image="${image.name}" data-tag="${image.tag}" data-digest="${image.digest}" ${actionButtonsDisabled}><i class="fas fa-trash"></i> Delete</a>
                                     </div>
                                 </td>
                                 <td><span class="label-badge"><i class="fas fa-tag mr-1"></i>Models</span></td>
@@ -892,9 +1143,34 @@
                         tableBody.appendChild(row);
                     }
                     
+                    // Auto Refresh: refresh image status if there are processing images
+                    if (hasProcessingImages) {
+                        if (!autoRefreshInterval) {
+                            autoRefreshInterval = setInterval(fetchImageInfo, 5000); // refresh every 5 seconds
+                        }
+                    } else {
+                        // Check if there are active "just completed" badges
+                        const hasActiveCompletionTimestamps = Object.keys(completionTimestamps).length > 0;
+                        // If there are no processing images and no active completion timestamps, stop the auto refresh
+                        if (!hasActiveCompletionTimestamps && autoRefreshInterval) {
+                            clearInterval(autoRefreshInterval);
+                            autoRefreshInterval = null;
+                        } else if (hasActiveCompletionTimestamps && !autoRefreshInterval) {
+                            // if there are active completion timestamps but no auto refresh interval, create a new auto refresh interval
+                            // it is vital when the page is loaded
+                            autoRefreshInterval = setInterval(fetchImageInfo, 2000); // refresh every 2 seconds to keep the badge display accurate
+                        }
+                    }
+                    
                     // "Create from" buttons
                     document.querySelectorAll('.create-from-label').forEach(label => {
                         label.addEventListener('click', function(e) {
+                            // If the button is disabled, do not execute any operation
+                            if (this.hasAttribute('disabled') || this.style.pointerEvents === 'none') {
+                                e.preventDefault();
+                                return;
+                            }
+                            
                             // Get data attributes
                             const repository = this.getAttribute('data-repository');
                             const imageName = this.getAttribute('data-image');
@@ -927,6 +1203,11 @@
                     document.querySelectorAll('.delete-button').forEach(button => {
                         button.addEventListener('click', function(e) {
                             e.preventDefault();
+                            
+                            // If the button is disabled, do not execute any operation
+                            if (this.hasAttribute('disabled') || this.style.pointerEvents === 'none') {
+                                return;
+                            }
                             
                             const repository = this.getAttribute('data-repository');
                             const imageName = this.getAttribute('data-image');
@@ -996,11 +1277,6 @@
             });
         }
         
-        function determineSource(tagData) {
-            // Attention: field in API is not ready yet
-            return "Local Upload";
-        }
-
         function showDetails(details) {
             details = JSON.parse(decodeURIComponent(details)); // parse the JSON string
             

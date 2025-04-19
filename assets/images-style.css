@@ -514,7 +514,7 @@ select:focus {
 
 .image-name-input {
     flex: 1;
-    max-width: 200px;
+    max-width: 300px;
     margin-right: 6px;
     position: relative;
     display: flex;
@@ -849,4 +849,103 @@ progress.progress.is-primary::-webkit-progress-value {
 
 #dockerfileUpload .help {
     margin-top: 4px;
+}
+
+/* Add these CSS rules for the processing and failed status indicators */
+.processing-status {
+    display: inline-flex;
+    align-items: center;
+    background-color: #fff8e1;
+    color: #b45309;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.25rem 0.6rem;
+    border-radius: 4px;
+    margin-left: 0.7rem;
+    white-space: nowrap;
+    border: 1px solid #fde68a;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    animation: pulse 2s infinite;
+}
+
+.processing-status i {
+    margin-right: 0.35rem;
+    color: #b45309;
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+.failed-status {
+    display: inline-flex;
+    align-items: center;
+    background-color: #fee2e2;
+    color: #b91c1c;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.25rem 0.6rem;
+    border-radius: 4px;
+    margin-left: 0.7rem;
+    white-space: nowrap;
+    border: 1px solid #fecaca;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.failed-status i {
+    margin-right: 0.35rem;
+    color: #b91c1c;
+}
+
+/* Just completed badge */
+.just-completed-badge {
+    display: inline-flex;
+    align-items: center;
+    background-color: #ecfdf5;
+    color: #059669;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.25rem 0.6rem;
+    border-radius: 4px;
+    margin-left: 0.7rem;
+    white-space: nowrap;
+    border: 1px solid #a7f3d0;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    transition: opacity 0.5s ease;
+}
+
+.just-completed-badge i {
+    margin-right: 0.35rem;
+    color: #059669;
+}
+
+.just-completed-badge.fade-out {
+    opacity: 0;
+}
+
+/* On processing badge */
+.processing-row {
+    background-color: rgba(255, 248, 225, 0.2) !important;
+    transition: background-color 0.3s ease;
+    animation: processing-row-pulse 3s infinite;
+}
+
+@keyframes processing-row-pulse {
+    0% {
+        background-color: rgba(255, 248, 225, 0.2);
+    }
+    50% {
+        background-color: rgba(255, 248, 225, 0.4);
+    }
+    100% {
+        background-color: rgba(255, 248, 225, 0.2);
+    }
 }
