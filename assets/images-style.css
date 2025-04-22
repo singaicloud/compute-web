@@ -116,6 +116,7 @@
     transition: color 0.2s ease;
     padding: 0.25rem 0.5rem;
     border-radius: 4px;
+    transition: all 0.2s ease;
 }
 
 .view-button:hover {
@@ -314,9 +315,11 @@ select:focus {
 /* Notification styling */
 .notification {
     padding: 0.75rem 1rem;
-    margin-top: 1rem;
+    margin-top: 0rem;
     border-radius: 4px;
     font-size: 0.9rem;
+    position: relative;
+    padding-right: 2rem;
 }
 
 .notification.is-hidden {
@@ -326,13 +329,13 @@ select:focus {
 .notification.is-success {
     background-color: #effaf3;
     color: #257942;
-    border: 1px solid #c2e7ca;
+    /* border: 1px solid #c2e7ca; */
 }
 
 .notification.is-danger {
     background-color: #feecf0;
     color: #cc0f35;
-    border: 1px solid #f9c5d1;
+    /* border: 1px solid #f9c5d1; */
 }
 
 /* Modal styling */
@@ -938,7 +941,7 @@ progress.progress.is-primary::-webkit-progress-value {
 .processing-status {
     display: inline-flex;
     align-items: center;
-    background-color: #fff8e1;
+    /* background-color: #fff8e1; */
     color: #b45309;
     font-size: 0.75rem;
     font-weight: 600;
@@ -946,8 +949,8 @@ progress.progress.is-primary::-webkit-progress-value {
     border-radius: 4px;
     margin-left: 0.7rem;
     white-space: nowrap;
-    border: 1px solid #fde68a;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    /* border: 1px solid #fde68a; */
+    /* box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05); */
     animation: pulse 2s infinite;
 }
 
@@ -971,7 +974,7 @@ progress.progress.is-primary::-webkit-progress-value {
 .failed-status {
     display: inline-flex;
     align-items: center;
-    background-color: #fee2e2;
+    /* background-color: #fee2e2; */
     color: #b91c1c;
     font-size: 0.75rem;
     font-weight: 600;
@@ -979,8 +982,9 @@ progress.progress.is-primary::-webkit-progress-value {
     border-radius: 4px;
     margin-left: 0.7rem;
     white-space: nowrap;
-    border: 1px solid #fecaca;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    /* border: 1px solid #fecaca; */
+    /* box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05); */
+    animation: failed-badge-pulse 2s ease-in-out infinite;
 }
 
 .failed-status i {
@@ -988,11 +992,23 @@ progress.progress.is-primary::-webkit-progress-value {
     color: #b91c1c;
 }
 
+@keyframes failed-badge-pulse {
+    0% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.85;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
 /* Just completed badge */
 .just-completed-badge {
     display: inline-flex;
     align-items: center;
-    background-color: #ecfdf5;
+    /* background-color: #ecfdf5; */
     color: #059669;
     font-size: 0.75rem;
     font-weight: 600;
@@ -1000,8 +1016,8 @@ progress.progress.is-primary::-webkit-progress-value {
     border-radius: 4px;
     margin-left: 0.7rem;
     white-space: nowrap;
-    border: 1px solid #a7f3d0;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    /* border: 1px solid #a7f3d0; */
+    /* box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05); */
     transition: opacity 0.5s ease;
 }
 
@@ -1012,6 +1028,48 @@ progress.progress.is-primary::-webkit-progress-value {
 
 .just-completed-badge.fade-out {
     opacity: 0;
+}
+
+/* Failure log button styling */
+.failure-log-button {
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 0.85rem;
+    transition: color 0.2s ease;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    /* background-color: #fee2e2; */
+    color: #b91c1c;
+    margin-right: 0.5rem;
+}
+
+.failure-log-button:hover {
+    border-bottom: none;
+    /* background-color: #fee2e2; */
+    background-color: rgba(0, 0, 0, 0.05);
+    color: #991b1b;
+}
+
+.failure-log-button i {
+    margin-right: 0.25rem;
+}
+
+/* Failure log modal styling */
+.failure-log-content {
+    background-color: #f5f5f5;
+    padding: 1rem;
+    border-radius: 4px;
+    max-height: 400px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: #333;
+    border: 1px solid #ddd;
 }
 
 /* On processing badge */
@@ -1031,4 +1089,26 @@ progress.progress.is-primary::-webkit-progress-value {
     100% {
         background-color: rgba(255, 248, 225, 0.2);
     }
+}
+
+/* Style for the pre element in error log */
+pre.failure-log-content {
+    /* border-left: 4px solid #f87171; */
+    /* background-color: #fef2f2; */
+    margin: 0;
+}
+
+/* hide button for upload result */
+.simple-close-btn {
+    position: absolute;
+    right: 0.75rem;
+    top: 0.75rem;
+    font-size: 0.85rem;
+    color: #777;
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.simple-close-btn:hover {
+    color: #333;
 }

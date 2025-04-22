@@ -71,14 +71,12 @@
                     <table id="publicImageTable" class="image-table">
                         <thead>
                             <tr>
-                                <th>Image Repository</th>
                                 <th>Image Name</th>
                                 <th>Tag</th>
                                 <th>Size</th>
                                 <th>Last Updated</th>
                                 <th>Details</th>
                                 <th>Actions</th>
-                                <th>Label</th>
                             </tr>
                         </thead>
                         <tbody id="publicImageTableBody"></tbody>
@@ -113,7 +111,6 @@
                                 <th>Last Updated</th>
                                 <th>Details</th>
                                 <th>Actions</th>
-                                <th>Label</th>
                             </tr>
                         </thead>
                         <tbody id="privateImageTableBody"></tbody>
@@ -234,7 +231,10 @@
                             </div>
                         </div>
                     </div>
-                    <div id="uploadResult" class="notification is-hidden"></div>
+                    <div id="uploadResult" class="notification is-hidden">
+                        <i class="simple-close-btn fas fa-times" aria-label="close"></i>
+                        <span id="uploadResultText"></span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -281,6 +281,12 @@
         
         // time in ms to display "completed" status
         const COMPLETION_DISPLAY_TIME_MS = 60000; 
+        
+        // time in ms to auto-hide error messages
+        const ERROR_MESSAGE_DISPLAY_TIME_MS = 30000;
+
+        // time in ms to auto-hide delete results messages
+        const DELETE_IMAGE_MESSAGE_DISPLAY_TIME_MS = 10000;
         
         // frozen effect when uploading or fetching images
         function disableAllButtons() {
@@ -787,46 +793,73 @@
                 // Upload Completed: asynchronously processing upon the completion of the upload
                 // this will not block user interaction and server will asynchronously build the image
                 xhr.upload.onload = function() {
+                    // Hide progress bar when upload is complete (regardless of server processing result)
                     topProgressContainer.classList.remove("visible");
                     enableAllButtons();
+                    
                     // Refresh the image list to show the status
                     fetchImageInfo();
                 };
                 
                 // Image Creation Completed: the entire request is completed thus processing the response
                 xhr.onload = function() {
-                    uploadResult.classList.remove("is-hidden");
                     // Reset current XHR reference
                     currentUploadXHR = null;
                     
-                    if (xhr.status >= 200 && xhr.status < 300) {
+                    // 500 represents building errors thus we ignore it
+                    if (xhr.status >= 400 && xhr.status < 600 && xhr.status !== 500) {
                         try {
                             const response = JSON.parse(xhr.responseText);
-                            if (response.error || response.message.includes("same digest") || response.message.includes("already exists")){
-                                uploadResult.classList.remove("is-success");
-                                uploadResult.classList.add("is-danger");
-                                uploadResult.textContent = response.error || response.message;
-                            } else {
-                                uploadResult.classList.remove("is-danger");
-                                uploadResult.classList.add("is-success");
-                                uploadResult.textContent = response.message || "Upload successful";
-                            }
-                            fetchImageInfo();
-                        } catch (e) {
-                            uploadResult.classList.remove("is-success");
+                            uploadResult.classList.remove("is-hidden", "is-success");
                             uploadResult.classList.add("is-danger");
-                            uploadResult.textContent = "Error processing server response";
+                            document.getElementById('uploadResultText').textContent = response.error || response.message || "Upload failed with status: " + xhr.status;
+                            
+                            setTimeout(() => {
+                                uploadResult.classList.add("is-hidden");
+                            }, ERROR_MESSAGE_DISPLAY_TIME_MS);
+                        } catch (e) {
+                            uploadResult.classList.remove("is-hidden", "is-success");
+                            uploadResult.classList.add("is-danger");
+                            document.getElementById('uploadResultText').textContent = "Upload failed with status: " + xhr.status;
+                            
+                            setTimeout(() => {
+                                uploadResult.classList.add("is-hidden");
+                            }, ERROR_MESSAGE_DISPLAY_TIME_MS);
+                        }
+                    } else if (xhr.status >= 200 && xhr.status < 300) {
+                        // For successful status codes, check for specific error messages
+                        try {
+                            const response = JSON.parse(xhr.responseText);
+                            if (response.error || (response.message && (response.message.includes("same digest") || response.message.includes("already exists")))) {
+                                // These are special cases that should be treated as upload errors
+                                uploadResult.classList.remove("is-hidden", "is-success");
+                                uploadResult.classList.add("is-danger");
+                                document.getElementById('uploadResultText').textContent = response.error || response.message;
+                                
+                                setTimeout(() => {
+                                    uploadResult.classList.add("is-hidden");
+                                }, ERROR_MESSAGE_DISPLAY_TIME_MS);
+                            } else {
+                                // Normal success - hide the upload result
+                                uploadResult.classList.add("is-hidden");
+                            }
+                        } catch (e) {
+                            // If can't parse the response, show error message
+                            uploadResult.classList.remove("is-hidden", "is-success");
+                            uploadResult.classList.add("is-danger");
+                            document.getElementById('uploadResultText').textContent = response.error || response.message || "Error processing server response: Invalid format";
+                            
+                            setTimeout(() => {
+                                uploadResult.classList.add("is-hidden");
+                            }, ERROR_MESSAGE_DISPLAY_TIME_MS);
                         }
                     } else {
-                        uploadResult.classList.remove("is-success");
-                        uploadResult.classList.add("is-danger");
-                        try {
-                            const response = JSON.parse(xhr.responseText);
-                            uploadResult.textContent = response.error || "Upload failed";
-                        } catch (e) {
-                            uploadResult.textContent = "Upload failed: " + xhr.status;
-                        }
+                        // For 500 status codes, hide the uploadResult
+                        uploadResult.classList.add("is-hidden");
                     }
+                    
+                    // Refresh the image list to show the status (including build errors)
+                    fetchImageInfo();
                 };
                 
                 // Upload error
@@ -834,7 +867,11 @@
                     topProgressContainer.classList.remove("visible");
                     uploadResult.classList.remove("is-hidden", "is-success");
                     uploadResult.classList.add("is-danger");
-                    uploadResult.textContent = "Network error during upload";
+                    document.getElementById('uploadResultText').textContent = "Network error during upload";
+                    
+                    setTimeout(() => {
+                        uploadResult.classList.add("is-hidden");
+                    }, ERROR_MESSAGE_DISPLAY_TIME_MS);
                     
                     // re-enable all buttons
                     enableAllButtons();
@@ -913,47 +950,73 @@
                 
                 // Upload Completed: upon the completion of the upload, hide the progress bar and re-enable all buttons
                 xhr.upload.onload = function() {
+                    // Hide progress bar when upload is complete (regardless of server processing result)
                     topProgressContainer.classList.remove("visible");
                     enableAllButtons();
+                    
                     // Refresh the image list to show the status
                     fetchImageInfo();
                 };
                 
                 // Image Creation Completed: the entire request is completed thus processing the response
                 xhr.onload = function() {
-                    uploadResult.classList.remove("is-hidden");
-                    
                     // Reset current XHR reference
                     currentUploadXHR = null;
                     
-                    if (xhr.status >= 200 && xhr.status < 300) {
+                    // 500 represents building errors thus we ignore it
+                    if (xhr.status >= 400 && xhr.status < 600 && xhr.status !== 500) {
                         try {
                             const response = JSON.parse(xhr.responseText);
-                            if (response.error || response.message.includes("same digest") || response.message.includes("already exists")) {
-                                uploadResult.classList.remove("is-success");
-                                uploadResult.classList.add("is-danger");
-                                uploadResult.textContent = response.error || response.message;
-                            } else {
-                                uploadResult.classList.remove("is-danger");
-                                uploadResult.classList.add("is-success");
-                                uploadResult.textContent = response.message || "Image successfully fetched from URL";
-                            }
-                            fetchImageInfo();
-                        } catch (e) {
-                            uploadResult.classList.remove("is-success");
+                            uploadResult.classList.remove("is-hidden", "is-success");
                             uploadResult.classList.add("is-danger");
-                            uploadResult.textContent = "Error processing server response";
+                            document.getElementById('uploadResultText').textContent = response.error || response.message || "Fetch failed with status: " + xhr.status;
+                            
+                            setTimeout(() => {
+                                uploadResult.classList.add("is-hidden");
+                            }, ERROR_MESSAGE_DISPLAY_TIME_MS);
+                        } catch (e) {
+                            uploadResult.classList.remove("is-hidden", "is-success");
+                            uploadResult.classList.add("is-danger");
+                            document.getElementById('uploadResultText').textContent = "Fetch failed with status: " + xhr.status;
+                            
+                            setTimeout(() => {
+                                uploadResult.classList.add("is-hidden");
+                            }, ERROR_MESSAGE_DISPLAY_TIME_MS);
+                        }
+                    } else if (xhr.status >= 200 && xhr.status < 300) {
+                        // For successful status codes, check for specific error messages
+                        try {
+                            const response = JSON.parse(xhr.responseText);
+                            if (response.error || (response.message && (response.message.includes("same digest") || response.message.includes("already exists")))) {
+                                // These are special cases that should be treated as upload errors
+                                uploadResult.classList.remove("is-hidden", "is-success");
+                                uploadResult.classList.add("is-danger");
+                                document.getElementById('uploadResultText').textContent = response.error || response.message;
+                                
+                                setTimeout(() => {
+                                    uploadResult.classList.add("is-hidden");
+                                }, ERROR_MESSAGE_DISPLAY_TIME_MS);
+                            } else {
+                                // Normal success - hide the upload result
+                                uploadResult.classList.add("is-hidden");
+                            }
+                        } catch (e) {
+                            // If can't parse the response, show error message
+                            uploadResult.classList.remove("is-hidden", "is-success");
+                            uploadResult.classList.add("is-danger");
+                            document.getElementById('uploadResultText').textContent = response.error || response.message || "Error processing server response: Invalid format";
+                            
+                            setTimeout(() => {
+                                uploadResult.classList.add("is-hidden");
+                            }, ERROR_MESSAGE_DISPLAY_TIME_MS);
                         }
                     } else {
-                        uploadResult.classList.remove("is-success");
-                        uploadResult.classList.add("is-danger");
-                        try {
-                            const response = JSON.parse(xhr.responseText);
-                            uploadResult.textContent = response.error || "Failed to fetch image from URL";
-                        } catch (e) {
-                            uploadResult.textContent = "Failed to fetch image from URL: " + xhr.status;
-                        }
+                        // For 500 status codes, hide the uploadResult
+                        uploadResult.classList.add("is-hidden");
                     }
+                    
+                    // Refresh the image list to show the status (including build errors)
+                    fetchImageInfo();
                 };
                 
                 // Upload error
@@ -961,7 +1024,11 @@
                     topProgressContainer.classList.remove("visible");
                     uploadResult.classList.remove("is-hidden", "is-success");
                     uploadResult.classList.add("is-danger");
-                    uploadResult.textContent = "Network error during image fetch";
+                    document.getElementById('uploadResultText').textContent = "Network error during image fetch";
+                    
+                    setTimeout(() => {
+                        uploadResult.classList.add("is-hidden");
+                    }, ERROR_MESSAGE_DISPLAY_TIME_MS);
                     
                     // Re-enable all buttons
                     enableAllButtons();
@@ -980,6 +1047,11 @@
                 
                 // Send the request with xhr.send
                 xhr.send(formData);
+            });
+
+            // Setup event listener for uploadResult close button
+            document.querySelector('#uploadResult .simple-close-btn').addEventListener('click', function() {
+                document.getElementById('uploadResult').classList.add('is-hidden');
             });
         });
         
@@ -1008,6 +1080,17 @@
                     rows[i].style.display = 'none';
                 }
             }
+        }
+
+        // Helper function to escape HTML and make text safe for display
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
         }
 
         // 3 important variables for image status tracking
@@ -1058,8 +1141,24 @@
                         // Generate the unique ID for the image
                         const imageId = `${image.registry_host}/${image.name}:${image.tag}`;
                         
+                        // Parse error log if status is FAILED
+                        let errorLog = '';
+                        const isFailed = image.status && image.status.startsWith('FAILED');
+                        if (isFailed) {
+                            const colonIndex = image.status.indexOf(':');
+                            if (colonIndex !== -1) {
+                                errorLog = image.status.substring(colonIndex + 2);
+                                // Set the clean status without the error log
+                                image.cleanStatus = 'FAILED';
+                            } else {
+                                image.cleanStatus = 'FAILED';
+                            }
+                        } else {
+                            image.cleanStatus = image.status;
+                        }
+                        
                         // Check the image status
-                        if (image.status === 'PROCESSING') {
+                        if (image.cleanStatus === 'PROCESSING') {
                             hasProcessingImages = true;
                             // Record the processing image
                             imageStatusMap[imageId] = 'PROCESSING';
@@ -1068,10 +1167,10 @@
                                 delete completionTimestamps[imageId];
                                 localStorage.setItem('imageCompletionTimestamps', JSON.stringify(completionTimestamps));
                             }
-                        } else if (image.status == 'DONE' && imageStatusMap[imageId] === 'PROCESSING') {
+                        } else if (image.cleanStatus === 'DONE' && imageStatusMap[imageId] === 'PROCESSING') {
                             // Image status changed from PROCESSING to DONE, mark it as just completed
                             image.justCompleted = true;
-                            imageStatusMap[imageId] = image.status;
+                            imageStatusMap[imageId] = image.cleanStatus;
                             completionTimestamps[imageId] = currentTime;
                             localStorage.setItem('imageCompletionTimestamps', JSON.stringify(completionTimestamps));
                         } else if (completionTimestamps[imageId]) {
@@ -1084,45 +1183,70 @@
                                 localStorage.setItem('imageCompletionTimestamps', JSON.stringify(completionTimestamps));
                             }
                         } else {
-                            imageStatusMap[imageId] = image.status;
+                            imageStatusMap[imageId] = image.cleanStatus;
                         }
                         
                         const row = document.createElement('tr');
                         row.setAttribute('data-image-id', imageId);
-                        const size = image.size + "GB";
+                        let size = image.size;
+                        if (size != null) {
+                            size = size + "GB";
+                        } else {
+                            size = "Not available";
+                        }
                         
                         // Process the status display
                         let statusDisplay = '';
-                        if (image.status === 'PROCESSING') {
+                        if (image.cleanStatus === 'PROCESSING') {
                             statusDisplay = '<span class="processing-status"><i class="fas fa-spinner fa-spin"></i>processing</span>';
-                        } else if (image.status === 'FAILED') {
+                        } else if (image.cleanStatus === 'FAILED') {
                             statusDisplay = '<span class="failed-status"><i class="fas fa-exclamation-triangle"></i>failed</span>';
                         } else if (image.justCompleted) {
                             statusDisplay = '<span class="just-completed-badge"><i class="fas fa-check"></i>completed</span>';
                         }
                         
                         // For PROCESSING images, disable the action buttons and add a style for processing rows
-                        const isProcessing = image.status === 'PROCESSING';
+                        const isProcessing = image.cleanStatus === 'PROCESSING';
                         const actionButtonsDisabled = isProcessing ? 'disabled style="pointer-events: none; opacity: 0.5; cursor: not-allowed;"' : '';
                         if (isProcessing) {
                             row.classList.add('processing-row');
                         }
+                        // Add failed-row class to highlight failed images
+                        if (isFailed) {
+                            row.classList.add('failed-row');
+                        }
+
+                        // Define action buttons based on image status
+                        let actionButtonsHTML = '';
+                        let imageInfo = image;
+                        if (isFailed) {
+                            // For failed images, only show Failure Log and Delete buttons
+                            actionButtonsHTML = `
+                                <div class="action-buttons">
+                                    <a href="#" class="failure-log-button" data-error-log="${encodeURIComponent(errorLog)}"><i class="fas fa-exclamation-circle"></i> Failure Log</a>
+                                    <a href="#" class="delete-button" data-repository="${image.registry_host}" data-image="${image.name}" data-tag="${image.tag}" data-digest="${image.digest}" ${actionButtonsDisabled}><i class="fas fa-trash"></i> Delete</a>
+                                </div>
+                            `;
+                            // delete status, otherwise the format in error-log will cause error when passing imageInfo to showDetails
+                            delete imageInfo.status;
+                        } else {
+                            // For normal images, show Create from and Delete buttons
+                            actionButtonsHTML = `
+                                <div class="action-buttons">
+                                    <a href="#" class="create-from-label" data-repository="${image.registry_host}" data-image="${image.name}" data-tag="${image.tag}" data-details='${encodeURIComponent(JSON.stringify(image))}' ${actionButtonsDisabled}><i class="fas fa-square-plus"></i>Create from</a>
+                                    <a href="#" class="delete-button" data-repository="${image.registry_host}" data-image="${image.name}" data-tag="${image.tag}" data-digest="${image.digest}" ${actionButtonsDisabled}><i class="fas fa-trash"></i> Delete</a>
+                                </div>
+                            `;
+                        }
 
                         if (isPublic) {
                             row.innerHTML = `
-                                <td>${image.registry_host}</td>
                                 <td>${image.name} ${statusDisplay}</td>
                                 <td>${image.tag}</td>
                                 <td>${size}</td>
                                 <td>${new Date(image.inserted_at).toLocaleString()}</td>
-                                <td><a href="#" class="view-button" onclick="showDetails('${encodeURIComponent(JSON.stringify(image))}')"><i class="fas fa-circle-info"></i> View</a></td>
-                                <td>
-                                    <div class="action-buttons">
-                                        <a href="#" class="create-from-label" data-repository="${image.registry_host}" data-image="${image.name}" data-tag="${image.tag}" data-details='${encodeURIComponent(JSON.stringify(image))}' ${actionButtonsDisabled}><i class="fas fa-square-plus"></i>Create from</a>
-                                        <a href="#" class="delete-button" data-repository="${image.registry_host}" data-image="${image.name}" data-tag="${image.tag}" data-digest="${image.digest}" ${actionButtonsDisabled}><i class="fas fa-trash"></i> Delete</a>
-                                    </div>
-                                </td>
-                                <td><span class="label-badge"><i class="fas fa-tag mr-1"></i>Models</span></td>
+                                <td><a href="#" class="view-button" onclick="showDetails('${encodeURIComponent(JSON.stringify(imageInfo))}')"><i class="fas fa-circle-info"></i> View</a></td>
+                                <td>${actionButtonsHTML}</td>
                             `;
                         } else {
                             row.innerHTML = `
@@ -1130,14 +1254,8 @@
                                 <td>${image.tag}</td>
                                 <td>${size}</td>
                                 <td>${new Date(image.inserted_at).toLocaleString()}</td>
-                                <td><a href="#" class="view-button" onclick="showDetails('${encodeURIComponent(JSON.stringify(image))}')"><i class="fas fa-circle-info"></i> View</a></td>
-                                <td>
-                                    <div class="action-buttons">
-                                        <a href="#" class="create-from-label" data-repository="${image.registry_host}" data-image="${image.name}" data-tag="${image.tag}" data-details='${encodeURIComponent(JSON.stringify(image))}' ${actionButtonsDisabled}><i class="fas fa-square-plus"></i>Create from</a>
-                                        <a href="#" class="delete-button" data-repository="${image.registry_host}" data-image="${image.name}" data-tag="${image.tag}" data-digest="${image.digest}" ${actionButtonsDisabled}><i class="fas fa-trash"></i> Delete</a>
-                                    </div>
-                                </td>
-                                <td><span class="label-badge"><i class="fas fa-tag mr-1"></i>Models</span></td>
+                                <td><a href="#" class="view-button" onclick="showDetails('${encodeURIComponent(JSON.stringify(imageInfo))}')"><i class="fas fa-circle-info"></i> View</a></td>
+                                <td>${actionButtonsHTML}</td>
                             `;
                         }
                         tableBody.appendChild(row);
@@ -1199,6 +1317,17 @@
                         });
                     });
                     
+                    // Failure log buttons
+                    document.querySelectorAll('.failure-log-button').forEach(button => {
+                        button.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            
+                            // Get the error log from data attribute
+                            const errorLog = decodeURIComponent(this.getAttribute('data-error-log') || '');
+                            showFailureLog(errorLog);
+                        });
+                    });
+                    
                     // Delete image buttons
                     document.querySelectorAll('.delete-button').forEach(button => {
                         button.addEventListener('click', function(e) {
@@ -1257,7 +1386,7 @@
                 // Auto-hide the notification after 5 seconds
                 setTimeout(() => {
                     resultNotification.classList.add("is-hidden");
-                }, 5000);
+                }, DELETE_IMAGE_MESSAGE_DISPLAY_TIME_MS);
                 
                 // Refresh the image list
                 fetchImageInfo();
@@ -1273,7 +1402,7 @@
                 
                 setTimeout(() => {
                     resultNotification.classList.add("is-hidden");
-                }, 5000);
+                }, DELETE_IMAGE_MESSAGE_DISPLAY_TIME_MS);
             });
         }
         
@@ -1363,6 +1492,45 @@
         function closeModal() {
             const modal = document.querySelector('.modal.is-active');
             if (modal) modal.remove();
+        }
+
+        // Function to display failure log in a modal
+        function showFailureLog(errorLog) {
+            // Decode the error log if it appears to be URL encoded
+            let decodedErrorLog = errorLog;
+            try {
+                // Try to decode in case it's URL encoded
+                if (errorLog.indexOf('%') !== -1) {
+                    decodedErrorLog = decodeURIComponent(errorLog);
+                }
+            } catch (e) {
+                console.error('Error decoding error log:', e);
+            }
+            
+            const errorContent = escapeHtml(decodedErrorLog) || 'No error log available';
+            
+            const logModal = document.createElement('div');
+            logModal.classList.add('modal', 'is-active');
+            logModal.innerHTML = `
+                <div class="modal-background" onclick="closeModal()"></div>
+                <div class="modal-content">
+                    <div class="box">
+                        <h4 class="title is-5"><i class="fas fa-exclamation-triangle mr-2"></i>Failure Log</h4>
+                        <div class="field">
+                            <div class="control">
+                                <pre class="failure-log-content">${errorContent}</pre>
+                            </div>
+                        </div>
+                        <div class="field is-grouped is-grouped-right">
+                            <div class="control">
+                                <button class="button" onclick="closeModal()"><i class="fas fa-times mr-2"></i>Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <button class="modal-close is-large" aria-label="close" onclick="closeModal()"></button>
+            `;
+            document.body.appendChild(logModal);
         }
     </script>
 </body>
