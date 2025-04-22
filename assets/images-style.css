@@ -17,6 +17,7 @@
     border: 1px solid var(--border-color);
     box-shadow: none;
     transition: all 0.2s ease;
+    overflow-x: auto;
 }
 
 .repository-content:hover {
@@ -30,16 +31,30 @@
     border: none;
     border-bottom: 1px solid var(--border-color);
     transition: all 0.2s ease;
+    width: 100%;
+    min-width: 800px;
+    display: inline-block;
+}
+
+.filter-search-box .field {
+    width: 100%;
+    max-width: none;
 }
 
 .filter-search-box:focus-within {
     border-color: var(--border-color);
 }
 
+.filter-search-box .control.has-icons-left {
+    width: 100%;
+    max-width: none;
+}
+
 /* Style for the overall search input to enhance UX */
 #publicSearchInput, #privateSearchInput {
     border-width: 1px;
     transition: all 0.2s ease;
+    width: 100%;
 }
 
 #publicSearchInput:focus, #privateSearchInput:focus {
@@ -54,6 +69,7 @@
     border-radius: 6px;
     overflow: hidden;
     font-size: 0.9rem;
+    min-width: 800px;
 }
 
 .image-table th,
@@ -674,6 +690,73 @@ select:focus {
 
 .delete-button i {
     margin-right: 0.25rem;
+}
+
+/* Add responsive styling for small screens */
+@media screen and (max-width: 768px) {
+    .action-buttons {
+        flex-direction: column;
+        gap: 0.3rem;
+    }
+    
+    .repository-content {
+        padding: 1rem 0.75rem;
+    }
+    
+    .filter-search-box {
+        padding-bottom: 0.75rem;
+        margin-bottom: 1rem;
+    }
+    
+    .filter-search-box .control.has-icons-left {
+        width: 100%;
+    }
+    
+    #publicSearchInput, #privateSearchInput {
+        font-size: 0.85rem;
+        height: 2.25rem;
+        width: 100%;
+    }
+    
+    .image-table th,
+    .image-table td {
+        padding: 0.6rem 0.7rem;
+    }
+    
+    .create-from-label, .view-button {
+        padding: 0.4rem 0.5rem;
+        font-size: 0.8rem;
+    }
+    
+    .create-from-label i, .view-button i, .delete-button i {
+        font-size: 0.9rem;
+    }
+}
+
+/* Add styles for very small screens */
+@media screen and (max-width: 480px) {
+    .image-table {
+        min-width: 650px;
+    }
+    
+    .filter-search-box {
+        min-width: 650px;
+    }
+    
+    .repository-header {
+        font-size: 1rem;
+        padding: 0.4rem;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+        gap: 0.2rem;
+    }
+    
+    .create-from-label, .view-button, .delete-button {
+        font-size: 0.75rem;
+        padding: 0.3rem 0.4rem;
+    }
 }
 
 /* Progress bar styles moved from HTML */
