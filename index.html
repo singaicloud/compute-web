@@ -187,7 +187,7 @@
                                         <span>Info</span>
                                     </div>
                                     ${status == 'Running' || status == 'Completed' ? `
-                                        <div class="job-action-button copy" onclick="event.stopPropagation(); cloneJob('${jobName}')">
+                                        <div class="job-action-button copy" onclick="event.stopPropagation(); cloneJob('${jobName}', '${jobContainerId}')">
                                             <i class="fa-solid fa-clone"></i>
                                             <span>Clone</span>
                                         </div>
@@ -402,10 +402,131 @@
             };
                     
             // clone action
-            window.cloneJob = function(jobName) {
-                alert(`Cloning job ${jobName}`);
-                // attention: not implemented yet, will update after the create-job API is ready
+            window.cloneJob = function(jobName, containersId) {
+                const containers = window.jobContainers[containersId];
+                if (!containers || containers.length === 0) {
+                    alert('No containers found for this job.');
+                    return;
+                }
+                
+                // Get the first container (as specified in the requirements)
+                const container = containers[0];
+                
+                if (container["Status"] !== 'Running') {
+                    alert('Cannot commit container that is not running. Container must be in Running state.');
+                    return;
+                }
+                
+                // Show the commit modal
+                showCommitModal(container);
             };
+                    
+            function showCommitModal(container) {
+                let modal = document.getElementById('commit-modal');
+                if (!modal) {
+                    modal = document.createElement('div');
+                    modal.id = 'commit-modal';
+                    modal.className = 'modal';
+                    modal.innerHTML = `
+                        <div class="modal-background"></div>
+                        <div class="modal-content">
+                            <div class="box">
+                                <h3 class="title is-5">Create Image from Container</h3>
+                                <div class="field">
+                                    <label class="label">Container</label>
+                                    <div class="control">
+                                        <input id="commit-container-name" class="input" type="text" readonly>
+                                    </div>
+                                </div>
+                                <div class="field">
+                                    <label class="label">Image Name <span class="has-text-danger">*</span></label>
+                                    <div class="control">
+                                        <input id="commit-image-name" class="input" type="text" placeholder="Enter new image name" required>
+                                    </div>
+                                    <p class="help">Provide a name for your new image</p>
+                                </div>
+                                <div class="field">
+                                    <label class="label">Image Tag</label>
+                                    <div class="control">
+                                        <input id="commit-image-tag" class="input" type="text" placeholder="latest" value="latest">
+                                    </div>
+                                    <p class="help">Optional: Provide a tag for your image (defaults to 'latest')</p>
+                                </div>
+                                <div class="field">
+                                    <label class="label">Description</label>
+                                    <div class="control">
+                                        <textarea id="commit-description" class="textarea" placeholder="Enter description for your image"></textarea>
+                                    </div>
+                                </div>
+                                <div class="field is-grouped">
+                                    <div class="control">
+                                        <button id="commit-save-button" class="button is-link">Create Image</button>
+                                    </div>
+                                    <div class="control">
+                                        <button id="commit-cancel-button" class="button is-light">Cancel</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <button class="modal-close is-large" aria-label="close"></button>
+                    `;
+                    document.body.appendChild(modal);
+                    
+                    // Add event listeners
+                    modal.querySelector('.modal-close').addEventListener('click', () => {
+                        modal.classList.remove('is-active');
+                    });
+                    modal.querySelector('.modal-background').addEventListener('click', () => {
+                        modal.classList.remove('is-active');
+                    });
+                    document.getElementById('commit-cancel-button').addEventListener('click', () => {
+                        modal.classList.remove('is-active');
+                    });
+                }
+                
+                // Set container name in the modal
+                document.getElementById('commit-container-name').value = container["Container Name"];
+                
+                // Clear previous inputs
+                document.getElementById('commit-image-name').value = '';
+                document.getElementById('commit-image-tag').value = 'latest';
+                document.getElementById('commit-description').value = '';
+                
+                // Set up the save button click handler
+                const saveButton = document.getElementById('commit-save-button');
+                saveButton.onclick = function() {
+                    const imageName = document.getElementById('commit-image-name').value.trim();
+                    const imageTag = document.getElementById('commit-image-tag').value.trim() || 'latest';
+                    const description = document.getElementById('commit-description').value.trim();
+                    const podName = container["Container Name"];
+                    
+                    if (!imageName) {
+                        alert('Image name is required');
+                        return;
+                    }
+                    
+                    // Close the modal immediately
+                    modal.classList.remove('is-active');
+                    
+                    // Call the API to commit the container
+                    api.post('/me/commit-container', {
+                        pod_name: podName,
+                        image_name: imageName,
+                        image_tag: imageTag,
+                        description: description
+                    })
+                    .then(response => {
+                        alert(`Image ${imageName}:${imageTag} created successfully. Please go to the Image page to view the image.`);
+                    })
+                    .catch(error => {
+                        console.error('Error committing container:', error);
+                        alert(`Error creating image: ${error.message || 'Unknown error'}`);
+                    });
+                };
+                
+                // Show the modal
+                modal.classList.add('is-active');
+            }
                     
             // delete action
             window.deleteJob = function(jobName, namespace, containersId) {
