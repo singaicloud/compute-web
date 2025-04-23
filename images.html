@@ -364,27 +364,6 @@
             // Status Displaying: track image status from localStorage to ensure the display of the newest status
             // it is used to display the status of the image even when the page is refreshed
             imageStatusMap = {};
-            try {
-                // load completion timestamps from localStorage
-                const savedTimestamps = localStorage.getItem('imageCompletionTimestamps');
-                if (savedTimestamps) {
-                    completionTimestamps = JSON.parse(savedTimestamps);
-                    // clear the timestamps that are older than the predefined threshold
-                    const currentTime = Date.now();
-                    for (const imageId in completionTimestamps) {
-                        if (currentTime - completionTimestamps[imageId] > COMPLETION_DISPLAY_TIME_MS) {
-                            delete completionTimestamps[imageId];
-                        }
-                    }
-                    // save after updating and cleaning up
-                    localStorage.setItem('imageCompletionTimestamps', JSON.stringify(completionTimestamps));
-                } else {
-                    completionTimestamps = {};
-                }
-            } catch (e) {
-                console.error('Error loading completion timestamps from localStorage:', e);
-                completionTimestamps = {};
-            }
             
             // Image Info Fetching: fetch image info from API
             fetchImageInfo();
@@ -406,17 +385,11 @@
                 }
             });
 
-            // Status Displaying: save completion timestamps to localStorage when the page is unloaded
+            // Status Displaying: clean up resources when the page is unloaded
             window.addEventListener('beforeunload', function() {
                 if (autoRefreshInterval) {
                     clearInterval(autoRefreshInterval);
                     autoRefreshInterval = null;
-                }
-                // Save the completion timestamps to localStorage
-                try {
-                    localStorage.setItem('imageCompletionTimestamps', JSON.stringify(completionTimestamps));
-                } catch (e) {
-                    console.error('Error saving completion timestamps to localStorage:', e);
                 }
                 
                 // Clear the status tracking object
@@ -1096,7 +1069,6 @@
         // 3 important variables for image status tracking
         let autoRefreshInterval = null; // for tracking refresh interval
         let imageStatusMap = {}; // for tracking image status, every image will be tracked
-        let completionTimestamps = {}; // for tracking the completion time of tags, and only when the image is in the "Done and Displayed" period will the value be stored
         
         // Image Table Builder: fetch image info from the server
         function fetchImageInfo() {
@@ -1111,27 +1083,8 @@
                     // Check if there are any processing images
                     let hasProcessingImages = false;
                     
-                    // Check if we need to continue displaying the "just completed" badge
+                    // Get current time for completion badge logic
                     const currentTime = Date.now();
-                    
-                    // Before processing, restore the stored completion timestamps from localStorage
-                    try {
-                        const savedTimestamps = localStorage.getItem('imageCompletionTimestamps');
-                        if (savedTimestamps) {
-                            const parsedTimestamps = JSON.parse(savedTimestamps);
-                            // Merge existing timestamps with restored timestamps
-                            completionTimestamps = { ...parsedTimestamps, ...completionTimestamps };
-                            
-                            // Clean up timestamps that are older than predefined threshold
-                            for (const imageId in completionTimestamps) {
-                                if (currentTime - completionTimestamps[imageId] > COMPLETION_DISPLAY_TIME_MS) {
-                                    delete completionTimestamps[imageId];
-                                }
-                            }
-                        }
-                    } catch (e) {
-                        console.error('Error loading completion timestamps from localStorage:', e);
-                    }
                     
                     // Traverse all items and build the table
                     for (const image of data.images) {
@@ -1162,26 +1115,14 @@
                             hasProcessingImages = true;
                             // Record the processing image
                             imageStatusMap[imageId] = 'PROCESSING';
-                            // Clean up any existing completion timestamps
-                            if (completionTimestamps[imageId]) {
-                                delete completionTimestamps[imageId];
-                                localStorage.setItem('imageCompletionTimestamps', JSON.stringify(completionTimestamps));
-                            }
-                        } else if (image.cleanStatus === 'DONE' && imageStatusMap[imageId] === 'PROCESSING') {
-                            // Image status changed from PROCESSING to DONE, mark it as just completed
-                            image.justCompleted = true;
-                            imageStatusMap[imageId] = image.cleanStatus;
-                            completionTimestamps[imageId] = currentTime;
-                            localStorage.setItem('imageCompletionTimestamps', JSON.stringify(completionTimestamps));
-                        } else if (completionTimestamps[imageId]) {
-                            // Check if we should continue displaying the "just completed" badge
-                            const elapsedTime = currentTime - completionTimestamps[imageId];
-                            if (elapsedTime < COMPLETION_DISPLAY_TIME_MS) {
+                        } else if (image.cleanStatus === 'DONE') {
+                            // For DONE images, check if inserted_at is recent enough to display "completed" badge
+                            const insertedTime = new Date(image.inserted_at).getTime();
+                            const timeElapsed = currentTime - insertedTime;
+                            if (timeElapsed < COMPLETION_DISPLAY_TIME_MS) {
                                 image.justCompleted = true;
-                            } else {
-                                delete completionTimestamps[imageId];
-                                localStorage.setItem('imageCompletionTimestamps', JSON.stringify(completionTimestamps));
                             }
+                            imageStatusMap[imageId] = 'DONE';
                         } else {
                             imageStatusMap[imageId] = image.cleanStatus;
                         }
@@ -1264,18 +1205,23 @@
                     // Auto Refresh: refresh image status if there are processing images
                     if (hasProcessingImages) {
                         if (!autoRefreshInterval) {
-                            autoRefreshInterval = setInterval(fetchImageInfo, 5000); // refresh every 5 seconds
+                            autoRefreshInterval = setInterval(fetchImageInfo, 2000); // refresh every 2 seconds
                         }
                     } else {
-                        // Check if there are active "just completed" badges
-                        const hasActiveCompletionTimestamps = Object.keys(completionTimestamps).length > 0;
-                        // If there are no processing images and no active completion timestamps, stop the auto refresh
-                        if (!hasActiveCompletionTimestamps && autoRefreshInterval) {
+                        // Check if there are recent completions to keep refreshing
+                        let hasRecentCompletions = false;
+                        for (const image of data.images) {
+                            if (image.cleanStatus === 'DONE' && image.justCompleted) {
+                                hasRecentCompletions = true;
+                                break;
+                            }
+                        }
+                        
+                        if (!hasRecentCompletions && autoRefreshInterval) {
                             clearInterval(autoRefreshInterval);
                             autoRefreshInterval = null;
-                        } else if (hasActiveCompletionTimestamps && !autoRefreshInterval) {
-                            // if there are active completion timestamps but no auto refresh interval, create a new auto refresh interval
-                            // it is vital when the page is loaded
+                        } else if (hasRecentCompletions && !autoRefreshInterval) {
+                            // If there are recent completions but no auto refresh interval, create a new one
                             autoRefreshInterval = setInterval(fetchImageInfo, 2000); // refresh every 2 seconds to keep the badge display accurate
                         }
                     }

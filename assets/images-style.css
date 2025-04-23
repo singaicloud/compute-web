@@ -1073,7 +1073,7 @@ progress.progress.is-primary::-webkit-progress-value {
 }
 
 /* On processing badge */
-.processing-row {
+/* .processing-row {
     background-color: rgba(255, 248, 225, 0.2) !important;
     transition: background-color 0.3s ease;
     animation: processing-row-pulse 3s infinite;
@@ -1089,7 +1089,7 @@ progress.progress.is-primary::-webkit-progress-value {
     100% {
         background-color: rgba(255, 248, 225, 0.2);
     }
-}
+} */
 
 /* Style for the pre element in error log */
 pre.failure-log-content {
