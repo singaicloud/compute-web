@@ -15,46 +15,819 @@
     <script src="scripts/sing-api.js"></script>
     <script type="module" src="./scripts/sing-theme.js"></script>
     
+    <!-- Launch page specific styles -->
+    <link href="assets/launch-styles.css" rel="stylesheet">
+    
+    <style>
+        /* Shared styles */
+        body {
+            font-family: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            color: #333;
+            line-height: 1.5;
+        }
+        
+        /* Image metadata display styles */
+        #image-metadata-container {
+            background-color: #f9f9fc;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+            margin-top: 16px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+            transition: all 0.3s ease;
+        }
+        
+        pre.metadata-text {
+            font-family: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+            background: none;
+            padding: 0;
+            margin: 0;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            color: #3c4257;
+            white-space: pre-wrap;
+        }
+        
+        pre.metadata-text strong {
+            color: #2563eb;
+            font-weight: 600;
+        }
+        
+        /* Enhanced first line (title) display effect */
+        pre.metadata-text::first-line {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #1a202c;
+        }
+        
+        /* Add some spacing to each section */
+        pre.metadata-text {
+            display: grid;
+            grid-row-gap: 4px;
+        }
+
+        /* Add more detailed style control */
+        .metadata-item {
+            margin-bottom: 6px;
+            display: flex;
+            align-items: baseline;
+        }
+        .metadata-label {
+            font-weight: 500;
+            color: #4a5568;
+            width: 200px;
+            flex-shrink: 0;
+        }
+        .metadata-value {
+            color: #2d3748;
+        }
+        .metadata-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #1a202c;
+            margin-bottom: 12px;
+        }
+        .metadata-scenarios span {
+            display: inline-block;
+            background-color: #ebf4ff;
+            color: #3182ce;
+            padding: 0px 8px;
+            border-radius: 4px;
+            margin-right: 6px;
+            margin-bottom: 4px;
+            font-size: 0.85rem;
+        }
+
+        /* Resource matching analysis styles */
+        .match-status {
+            display: inline-flex;
+            align-items: center;
+            font-weight: 500;
+            margin-left: 2px;
+            margin-right: 2px;
+            padding: 0 3px;
+            border-radius: 3px;
+            font-size: 0.7rem;
+            white-space: nowrap;
+            vertical-align: text-top;
+            line-height: 1.2;
+            position: relative;
+            top: -6px;
+            right: -1px;
+        }
+
+        /* Custom tooltip styles */
+        [data-tooltip] {
+            position: relative;
+            cursor: help;
+        }
+
+        [data-tooltip]::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(51, 51, 51, 0.95);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: 500;
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s ease;
+            z-index: 100;
+            pointer-events: none;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+            letter-spacing: 0.2px;
+            text-transform: capitalize; /* Ensure first letter capitalization */
+            font-family: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        [data-tooltip]:hover::after {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* Status icon container styles */
+        .status-icons-container {
+            width: 14px;
+            height: 14px;
+            display: inline-block;
+            position: relative;
+            vertical-align: middle;
+            margin: 0 2px;
+        }
+
+        /* Match status styles */
+        .match-status {
+            display: none; /* Hidden by default */
+            position: absolute;
+            left: 0;
+            top: 0;
+        }
+
+        /* Icon styles */
+        .match-status i {
+            font-size: 11px;
+            line-height: 1;
+            text-transform: capitalize;
+        }
+
+        /* Icon colors */
+        .match-status.good i {
+            color: #38a169;
+        }
+
+        .match-status.poor i {
+            color: #e53e3e;
+        }
+    </style>
+    
     <!-- Font -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&display=swap" rel="stylesheet">
     <script src="https://kit.fontawesome.com/99d5980073.js" crossorigin="anonymous"></script>
+
+    <!-- Markdown parser -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 <body>
     <sing-navigation></sing-navigation>
     
     <section class="section form"> 
         <script>
-            const userHash = 'demo-project';
             document.addEventListener('DOMContentLoaded', function(){
-                // Function to fetch images from the API and populate the select box
-                function fetchImages() {
-                    api.get(`/me/image-info`)
+                // Set marked parsing options
+                marked.setOptions({
+                    gfm: true,
+                    breaks: true,
+                    sanitize: false,
+                    smartLists: true
+                });
+                
+                // Get metadata container, ensure it's hidden initially
+                const metadataContainer = document.getElementById('image-metadata-container');
+                
+                if (metadataContainer) {
+                    metadataContainer.style.display = 'none';
+                } else {
+                    console.error("Metadata container not found, please check HTML structure");
+                }
+                
+                // Check metadata content container
+                const metadataContent = document.getElementById('image-metadata-content');
+                if (!metadataContent) {
+                    console.error("Metadata content container not found, please check HTML structure");
+                }
+                
+                let username = 'default';
+                
+                // Get friendly model name display
+                function getDisplayModelName(imageName) {
+                    // Special case handling
+                    if (imageName === 'codellama-7b') return 'CodeLlama-7B';
+                    if (imageName === 'deepseek-7b-v1') return 'DeepSeek-7B-v1';
+                    if (imageName === 'deepseek-7b') return 'DeepSeek-7B';
+                    if (imageName === 'llama2-7b') return 'Llama2-7B';
+                    if (imageName === 'qwen-7b') return 'Qwen-7B';
+                    if (imageName === 'nginx') return 'Nginx';
+                    if (imageName === 'ollama-base') return 'Ollama-base';
+                    if (imageName === 'pytorch-dist-mnist-test') return 'PyTorch-dist-mnist-test';
+                    if (imageName === 'pytorch-env-without-job-ssh') return 'PyTorch-env-without-job-ssh';
+                    
+                    // For other names, perform general formatting
+                    return imageName.split('-').map(part => {
+                        // Handle number suffixes, like 7b to 7B
+                        if (/^\d+[a-z]$/.test(part)) {
+                            return part.slice(0, -1) + part.slice(-1).toUpperCase();
+                        }
+                        // Capitalize first letter
+                        return part.charAt(0).toUpperCase() + part.slice(1);
+                    }).join('-');
+                }
+                
+                // Add function to display image metadata
+                function handleImageChange() {
+                    const selectedImage = document.querySelector('select[name="master_image"]').value;
+                    const metadataContent = document.getElementById('image-metadata-content');
+                    const metadataContainer = document.getElementById('image-metadata-container');
+                    const commandInput = document.querySelector('input[name="command"]');
+                    const portInput = document.querySelector('.exposed-port'); 
+                    const statusIconsContainer = document.getElementById('status-icons-container');
+                    
+                    // If no image is selected, hide all content and return
+                    if (!selectedImage) {
+                        if (metadataContent) metadataContent.innerHTML = '';
+                        if (metadataContainer) metadataContainer.style.display = 'none';
+                        if (commandInput) commandInput.value = '';
+                        if (portInput) portInput.value = ''; 
+                        
+                        // Hide resource matching status icons
+                        const matchStatusGoodElement = document.getElementById('match-status-good');
+                        const matchStatusPoorElement = document.getElementById('match-status-poor');
+                        if(matchStatusGoodElement) matchStatusGoodElement.style.display = 'none';
+                        if(matchStatusPoorElement) matchStatusPoorElement.style.display = 'none';
+                        if(statusIconsContainer) statusIconsContainer.style.display = 'none';
+                        
+                        return;
+                    }
+                    
+                    // Find the selected image from all image data
+                    const selectedImageObj = window.imagesData.images.find(img => img.full_name === selectedImage);
+                    
+                    // If the image is not found, hide all content
+                    if (!selectedImageObj) {
+                        if (metadataContainer) metadataContainer.style.display = 'none';
+                        if (commandInput) commandInput.value = '';
+                        if (portInput) portInput.value = ''; 
+                        
+                        // Hide resource matching status icons
+                        const matchStatusGoodElement = document.getElementById('match-status-good');
+                        const matchStatusPoorElement = document.getElementById('match-status-poor');
+                        if(matchStatusGoodElement) matchStatusGoodElement.style.display = 'none';
+                        if(matchStatusPoorElement) matchStatusPoorElement.style.display = 'none';
+                        if(statusIconsContainer) statusIconsContainer.style.display = 'none';
+                        
+                        return;
+                    }
+                    
+                    // Found the image, process image information
+                    // Image name display style
+                    const displayName = getDisplayModelName(selectedImageObj.name);
+                    
+                    // Set default entrypoint (if exists)
+                    if (commandInput) {
+                        if (selectedImageObj.default_entrypoint) {
+                            commandInput.value = selectedImageObj.default_entrypoint;
+                        } else {
+                            commandInput.value = '';
+                        }
+                    }
+                    
+                    // Set default port (if exists)
+                    if (portInput && selectedImageObj.default_port) {
+                        portInput.value = selectedImageObj.default_port;
+                    } else if (portInput) {
+                        portInput.value = '';
+                    }
+                    
+                    // Build metadata HTML
+                    let metadataHTML = `
+                        <div class="metadata-title">${displayName}</div>`;
+                    
+                    // Add description (if exists)
+                    if (selectedImageObj.description) {
+                        metadataHTML += `
+                        <div class="metadata-item">
+                            <div class="metadata-label">Description:</div>
+                            <div class="metadata-value">${selectedImageObj.description}</div>
+                        </div>`;
+                    }
+                    
+                    // Add applicable scenarios (if exists)
+                    if (selectedImageObj.applicable_scenarios) {
+                        metadataHTML += `
+                        <div class="metadata-item">
+                            <div class="metadata-label">Applicable scenarios:</div>
+                            <div class="metadata-value">${selectedImageObj.applicable_scenarios}</div>
+                        </div>`;
+                    }
+                    
+                    // Add recommended configuration (if exists)
+                    if (selectedImageObj.recommended_configuration) {
+                        metadataHTML += `
+                        <div class="metadata-item">
+                            <div class="metadata-label">Recommended configuration:</div>
+                            <div class="metadata-value">${selectedImageObj.recommended_configuration}</div>
+                        </div>`;
+                    }
+                    
+                    // Add GitHub repository link (if exists)
+                    if (selectedImageObj.github_repo) {
+                        metadataHTML += `
+                        <div class="metadata-item">
+                            <div class="metadata-label">Source file link:</div>
+                            <div class="metadata-value">
+                                <a href="${selectedImageObj.github_repo}" target="_blank">${selectedImageObj.github_repo}</a>
+                            </div>
+                        </div>`;
+                    }
+                    
+                    // Update metadata content and display
+                    metadataContent.innerHTML = metadataHTML;
+                    metadataContainer.style.display = 'block';
+                    
+                    // Get current selected GPU information
+                    const gpuTypeInput = document.getElementById('gpu-type-input');
+                    const gpuLimitInput = document.getElementById('gpu-limit-input');
+                    const gpuType = gpuTypeInput ? gpuTypeInput.value : '';
+                    const gpuCount = gpuLimitInput ? parseInt(gpuLimitInput.value) || 1 : 1;
+
+                    // Show resource allocation preview
+                    const previewContainer = document.getElementById('resource-allocation-preview');
+                    if (previewContainer) {
+                        previewContainer.style.display = 'block';
+                    }
+
+                    // Check resource matching status
+                    // Check if the image has a valid minimum_gpu_memory property
+                    if (selectedImageObj.minimum_gpu_memory && selectedImageObj.minimum_gpu_memory.toString().trim() !== '') {
+                        // Show matching status icons
+                        if (statusIconsContainer) {
+                            statusIconsContainer.style.display = 'inline-block';
+                        }
+                        // Update resource allocation preview
+                        updateResourceAllocationPreview(selectedImageObj, gpuType, gpuCount);
+                    } else {
+                        // If the image does not have a valid minimum_gpu_memory property, hide matching status
+                        const matchStatusGoodElement = document.getElementById('match-status-good');
+                        const matchStatusPoorElement = document.getElementById('match-status-poor');
+
+                        if (matchStatusGoodElement) matchStatusGoodElement.style.display = 'none';
+                        if (matchStatusPoorElement) matchStatusPoorElement.style.display = 'none';
+                        if (statusIconsContainer) statusIconsContainer.style.display = 'none';
+                    }
+                }
+
+                // Check resource matching status
+                function updateResourceMatchingStatus(selectedImageObj, gpuType, gpuCount) {
+                    // Get match status elements
+                    const matchStatusGoodElement = document.getElementById('match-status-good');
+                    const matchStatusPoorElement = document.getElementById('match-status-poor');
+                    const statusIconsContainer = document.getElementById('status-icons-container');
+                    
+                    // Hide match status by default
+                    if(matchStatusGoodElement) matchStatusGoodElement.style.display = 'none';
+                    if(matchStatusPoorElement) matchStatusPoorElement.style.display = 'none';
+
+                    // Check if the image has a valid minimum_gpu_memory property
+                    if(!selectedImageObj || !selectedImageObj.minimum_gpu_memory || selectedImageObj.minimum_gpu_memory.toString().trim() === ''){
+                        // Hide matching status icons
+                        if(statusIconsContainer){
+                            statusIconsContainer.style.display = 'none';
+                        }
+                        return;
+                    }
+
+                    // Show matching status icons   
+                    if(statusIconsContainer){
+                        statusIconsContainer.style.display = 'inline-block';
+                    }
+
+                    // Get minimum GPU memory requirement
+                    let gpuMemoryGb = 0;
+                    if(window.gpuInfo){
+                        for(const nodeKey in window.gpuInfo){
+                            if(window.gpuInfo[nodeKey].gpu_sku === gpuType){
+                                gpuMemoryGb = window.gpuInfo[nodeKey].gpu_memory_gb;
+                                break;
+                            }
+                        }
+                    }
+
+                    // Calculate total GPU memory
+                    const totalMemoryGb = gpuMemoryGb * gpuCount;
+
+                    // Get image's minimum GPU memory requirement by the image
+                    let minimumGpuMemory = 0;
+                    if(selectedImageObj.minimum_gpu_memory){
+                        if(!isNaN(selectedImageObj.minimum_gpu_memory)){
+                            minimumGpuMemory = parseInt(selectedImageObj.minimum_gpu_memory);
+                        } else if(typeof selectedImageObj.minimum_gpu_memory === 'string'){
+                            const memoryMatch = selectedImageObj.minimum_gpu_memory.match(/(\d+)/);
+                            if(memoryMatch){
+                                minimumGpuMemory = parseInt(memoryMatch[1]);
+                            }
+                        }
+                    }
+
+                    if(minimumGpuMemory > 0){
+                        if(totalMemoryGb >= minimumGpuMemory){
+                            if(matchStatusGoodElement) matchStatusGoodElement.style.display = 'inline-flex';
+                        }else{
+                            if(matchStatusPoorElement) matchStatusPoorElement.style.display = 'inline-flex';
+                        }
+                    }   
+                }
+                
+                // Process URL parameters to prefill image name, entrypoint and ports
+                function processUrlParameters() {
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const repository = urlParams.get('repository');
+                    const imageName = urlParams.get('image');
+                    const tag = urlParams.get('tag');
+                    const entrypoint = urlParams.get('entrypoint');
+                    const ports = urlParams.get('ports');
+                    
+                    if (repository && imageName && tag) {
+                        const fullImageName = `${repository}/${imageName}:${tag}`;
+                        
+                        // Pre-fill image name
+                        window.selectedImageFromUrl = fullImageName;
+                        // Pre-fill entrypoint
+                        if (entrypoint) {
+                            document.querySelector('input[name="command"]').value = entrypoint;
+                        }
+                        // Pre-fill ports
+                        if (ports) {
+                            try {
+                                const portsObj = JSON.parse(ports);
+                                // Format ports for the input field (comma-separated)
+                                if (typeof portsObj === 'object') {
+                                    const portsList = Object.keys(portsObj).join(',');
+                                    document.querySelector('.exposed-port').value = portsList;
+                                }
+                            } catch (e) {
+                                console.error("Error parsing ports JSON:", e);
+                            }
+                        }
+                    }
+                }
+                
+                function fetchUserInfo() {
+                    api.get('/me')
                         .then(data => {
+                            if (data && data.username) {
+                                username = data.username;
+                                document.querySelector('input[name="namespace"]').value = username;
+                            }
+                        })
+                        .catch(error => {
+                            console.error("Failed to fetch user info:", error);
+                        });
+                }
+                
+                // Fetch images from API and populate select box
+                function fetchImages() {
+                    api.get(`/me/images`)
+                        .then(data => {
+                            // Save all image data for later use
+                            window.imagesData = data;
+                            
+                            // Enhance images with metadata
+                            enhanceImagesWithMetadata(data.images);
+                            
                             var select = document.querySelector('select[name="master_image"]');
                             select.innerHTML = "";
                             
-                            Object.keys(data.images).forEach(registryUrl => {
-                                const images = data.images[registryUrl];
-                                
-                                Object.keys(images).forEach(imageName => {
-                                    images[imageName].forEach(imageInfo => {
-                                        var option = document.createElement('option');
-                                        option.value = `${registryUrl}/${imageName}:${imageInfo.tag}`;
-                                        option.textContent = `${registryUrl}/${imageName}:${imageInfo.tag}`;
-                                        select.appendChild(option);
-                                    });
-                                });
+                            data.images.forEach(image => {
+                                var option = document.createElement('option');
+                                option.value = image.full_name;
+                                option.textContent = image.full_name; // Restore original display, show full image name
+                                select.appendChild(option);
                             });
+                            
+                            // Check if image is pre-selected
+                            if (window.selectedImageFromUrl) {
+                                // Find with matching value
+                                const options = select.options;
+                                for (let i = 0; i < options.length; i++) {
+                                    if (options[i].value === window.selectedImageFromUrl) {
+                                        select.selectedIndex = i;
+                                        break;
+                                    }
+                                }
+                            }
+                            
+                            if (!select.value && select.options.length > 0) {
+                                select.selectedIndex = 0;
+                            }
+                            
+                            // Add event listener
+                            select.addEventListener('change', handleImageChange);
+                            
+                            // Immediately trigger selection event to display metadata
+                            handleImageChange();
                         })
                         .catch(error => {
                             console.error("Failed to fetch images:", error);
                         });
                 }
-    
-                fetchImages(); // Call the function to populate the select box
-    
+                
+                // No longer need to enhance image metadata, use data directly from backend API
+                function enhanceImagesWithMetadata(images) {
+                    // Function kept for compatibility
+                }
+                
+                // Fetch available GPU information
+                function fetchGpuInfo() {
+                    api.get(`/gpu-info`)
+                        .then(data => {
+                            const gpuContainer = document.getElementById('gpu-options-container');
+                            gpuContainer.innerHTML = '';
+                            
+                            window.gpuInfo = data.gpu_info || {};
+                            
+                            if (data.summary) {
+                                Object.keys(data.summary).forEach(gpuSku => {
+                                    const info = data.summary[gpuSku];
+                                    
+                                    let gpuName = gpuSku;
+                                    let gpuMemoryGb = 0;
+                                    
+                                    for (const nodeKey in data.gpu_info) {
+                                        if (data.gpu_info[nodeKey].gpu_sku === gpuSku) {
+                                            gpuName = data.gpu_info[nodeKey].gpu_name || gpuSku;
+                                            gpuMemoryGb = data.gpu_info[nodeKey].gpu_memory_gb;
+                                            break;
+                                        }
+                                    }
+                                    
+                                    // If no memory info, try to extract from SKU
+                                    if (!gpuMemoryGb) {
+                                        const match = gpuSku.match(/(\d+)G$/);
+                                        if (match) {
+                                            gpuMemoryGb = parseInt(match[1]);
+                                        }
+                                    }
+                                    
+                                    const gpuButton = document.createElement('button');
+                                    gpuButton.classList.add('button', 'gpu-option');
+                                    gpuButton.dataset.type = gpuSku;
+                                    gpuButton.dataset.total = info.total;
+                                    gpuButton.dataset.used = info.used;
+                                    gpuButton.dataset.memory = gpuMemoryGb;
+                                    gpuButton.textContent = `${gpuName} (${info.used}/${info.total})`;
+                                    
+                                    // If no available GPUs, disable button
+                                    const availableCount = info.total - info.used;
+                                    if (availableCount <= 0) {
+                                        gpuButton.disabled = true;
+                                        gpuButton.classList.add('is-light');
+                                        gpuButton.title = "No GPUs available";
+                                    }
+                                    
+                                    gpuButton.addEventListener('click', function() {
+                                        document.querySelectorAll('.gpu-option').forEach(btn => {
+                                            btn.classList.remove('is-primary', 'is-selected');
+                                        });
+                                        this.classList.add('is-primary', 'is-selected');
+                                        document.getElementById('gpu-type-input').value = this.dataset.type;
+                                        
+                                        document.getElementById('gpu-name-input').value = gpuName;
+                                        
+                                        setupGpuNodeOptions(this.dataset.type, parseInt(this.dataset.total), parseInt(this.dataset.used));
+                                    });
+                                    gpuContainer.appendChild(gpuButton);
+                                });
+                                
+                                if (gpuContainer.firstChild) {
+                                    gpuContainer.firstChild.click();
+                                    gpuContainer.firstChild.classList.add('is-selected');
+                                }
+                            }
+                        })
+                        .catch(error => {
+                            console.error("Failed to fetch GPU info:", error);
+                        });
+                }
+                
+                // Initialize GPU-node combination options
+                function setupGpuNodeOptions(gpuType, totalGPUs, usedGPUs) {
+                    const availableGPUs = Math.max(0, totalGPUs - usedGPUs);
+                    
+                    // Define options based on GPU type
+                    let allOptions = [];
+                    
+                    // Configure options based on GPU type and availability
+                    if (gpuType === 'N309024G') { // RTX3090
+                        allOptions = [
+                            {gpus: 1, nodes: 1, label: '1 GPU × 1 Node', minRequired: 1},
+                            {gpus: 1, nodes: 2, label: '1 GPU × 2 Nodes', minRequired: 2},
+                            {gpus: 1, nodes: 4, label: '1 GPU × 4 Nodes', minRequired: 4},
+                            {gpus: 2, nodes: 2, label: '2 GPUs × 2 Nodes', minRequired: 4}
+                        ];
+                    } else if (gpuType === 'N308010G') { // RTX3080
+                        allOptions = [
+                            {gpus: 1, nodes: 1, label: '1 GPU × 1 Node', minRequired: 1},
+                            {gpus: 1, nodes: 2, label: '1 GPU × 2 Nodes', minRequired: 2}
+                        ];
+                    } else {
+                        // Default options for other GPU types
+                        allOptions = [
+                            {gpus: 1, nodes: 1, label: '1 GPU × 1 Node', minRequired: 1},
+                            {gpus: 1, nodes: 2, label: '1 GPU × 2 Nodes', minRequired: 2}
+                        ];
+                    }
+                    
+                    const container = document.getElementById('gpu-node-options');
+                    container.innerHTML = '';
+                    
+                    let hasEnabledOption = false;
+                    
+                    // Create buttons for each option
+                    allOptions.forEach(option => {
+                        const button = document.createElement('button');
+                        button.classList.add('button', 'gpu-node-option');
+                        button.textContent = option.label;
+                        button.dataset.gpus = option.gpus;
+                        button.dataset.nodes = option.nodes;
+                        
+                        // Calculate total GPUs needed for this option
+                        const requiredGPUs = option.gpus * option.nodes;
+                        
+                        // If required GPUs exceed available, disable button
+                        if (requiredGPUs > availableGPUs) {
+                            button.disabled = true;
+                            button.classList.add('is-light');
+                            button.title = `Requires ${requiredGPUs} GPUs, but only ${availableGPUs} available`;
+                        } else {
+                            hasEnabledOption = true;
+                            button.addEventListener('click', function() {
+                                document.querySelectorAll('.gpu-node-option').forEach(btn => {
+                                    btn.classList.remove('is-primary', 'is-selected');
+                                });
+                                this.classList.add('is-primary', 'is-selected');
+                                document.getElementById('gpu-limit-input').value = this.dataset.gpus;
+                                document.getElementById('node-replicas-input').value = this.dataset.nodes;
+                                
+                                // Update resource allocation preview
+                                updateResourceAllocationPreview(gpuType, option.gpus, option.nodes);
+                            });
+                        }
+                        
+                        container.appendChild(button);
+                    });
+                    
+                    // Auto-select first available option
+                    if (hasEnabledOption) {
+                        for (let i = 0; i < container.children.length; i++) {
+                            const button = container.children[i];
+                            if (!button.disabled) {
+                                button.click();
+                                break;
+                            }
+                        }
+
+                        // Check whether the currently selected image and resource match
+                        const selectedImage = document.querySelector('select[name="master_image"]').value;
+                        if(selectedImage){
+                            const selectedImageObj = window.imagesData.images.find(img => img.full_name === selectedImage);
+                            if(selectedImageObj){
+                                // Using variables in the current function
+                                const firstEnabledOption = Array.from(container.children).find(btn => !btn.disabled);
+                                const gpuCount = firstEnabledOption ? parseInt(firstEnabledOption.dataset.gpus) || 1 : 1;
+                                updateResourceMatchingStatus(selectedImageObj, gpuType, gpuCount);
+                            }
+                        }
+                    } else {
+                        // Hide resource preview if no options available
+                        document.getElementById('resource-allocation-preview').style.display = 'none';
+                        document.getElementById('match-status-good').style.display = 'none';
+                        document.getElementById('match-status-poor').style.display = 'none';
+                    }
+                }
+                
+                // Function to update the resource allocation preview
+                function updateResourceAllocationPreview(gpuSku, gpuCount, nodeCount) {
+                    const previewContainer = document.getElementById('resource-allocation-preview');
+                    
+                    // Get selected GPU information
+                    let gpuName = '';
+                    let cpuCoresPerGpu = 0;
+                    let memoryGbPerGpu = 0;
+                    let gpuMemoryGb = 0;
+                    
+                    // Get matching node data from GPU info
+                    for (const nodeKey in window.gpuInfo) {
+                        const node = window.gpuInfo[nodeKey];
+                        if (node.gpu_sku === gpuSku) {
+                            gpuName = node.gpu_name || '';
+                            cpuCoresPerGpu = node.cpu_cores_per_gpu || 0;
+                            memoryGbPerGpu = node.memory_gb_per_gpu || 0;
+                            gpuMemoryGb = node.gpu_memory_gb || 0;
+                            
+                            if (node.total && node.used && (node.total - node.used >= gpuCount * nodeCount)) {
+                                break;
+                            }
+                        }
+                    }
+                    
+                    // Calculate total resources
+                    const totalCpuCores = (cpuCoresPerGpu * gpuCount * nodeCount).toFixed(1);
+                    const totalMemoryGb = (memoryGbPerGpu * gpuCount * nodeCount).toFixed(1);
+                    
+                    // Update preview information
+                    const gpuValueText = `${gpuCount}× ${gpuName} (${gpuMemoryGb}G VRAM)`;
+                    
+                    document.getElementById('preview-gpu-info').textContent = gpuValueText;
+                    document.getElementById('preview-cpu-info').textContent = `${totalCpuCores} cores (automatically assigned)`;
+                    document.getElementById('preview-memory-info').textContent = `${totalMemoryGb}Gi (automatically assigned)`;
+                    
+                    // Show preview container
+                    previewContainer.style.display = 'block';
+                    
+                    // Get current selected image
+                    const selectedImage = document.querySelector('select[name="master_image"]').value;
+                    
+                    // Get match status elements
+                    const matchStatusGoodElement = document.getElementById('match-status-good');
+                    const matchStatusPoorElement = document.getElementById('match-status-poor');
+                    
+                    // Hide match status by default
+                    matchStatusGoodElement.style.display = 'none';
+                    matchStatusPoorElement.style.display = 'none';
+                    
+                    // If no image selected, don't perform resource matching analysis
+                    if (!selectedImage) {
+                        return;
+                    }
+                    
+                    // Find selected image metadata
+                    const selectedImageData = window.imagesData && window.imagesData.images ? 
+                        window.imagesData.images.find(img => img.full_name === selectedImage) : null;
+                    
+                    // If the image does not have the minimum_gpu_memory property, hide matching status
+                    if (!selectedImageData || !selectedImageData.minimum_gpu_memory || selectedImageData.minimum_gpu_memory.toString().trim() === '') {
+                        matchStatusGoodElement.style.display = 'none';
+                        matchStatusPoorElement.style.display = 'none';
+
+                        const statusIconsContainer = document.getElementById('status-icons-container');
+                        if(statusIconsContainer) statusIconsContainer.style.display = 'none';
+                        
+                        return;
+                    }else{
+                        // Show matching status icons
+                        const statusIconsContainer = document.getElementById('status-icons-container');
+                        if(statusIconsContainer) statusIconsContainer.style.display = 'inline-block';
+                    }
+                    
+                    // Get image's minimum GPU memory requirement
+                    let minimumGpuMemory = 0;
+                    
+                    if (!isNaN(selectedImageData.minimum_gpu_memory)) {
+                        minimumGpuMemory = parseInt(selectedImageData.minimum_gpu_memory);
+                    } else if (typeof selectedImageData.minimum_gpu_memory === 'string') {
+                        // Try to extract number from string
+                        const memoryMatch = selectedImageData.minimum_gpu_memory.match(/(\d+)/);
+                        if (memoryMatch) {
+                            minimumGpuMemory = parseInt(memoryMatch[1]);
+                        }
+                    }
+                    
+                    // If unable to get minimum GPU memory requirement, don't show match analysis
+                    if (minimumGpuMemory <= 0) {
+                        return;
+                    }
+                    
+                    // Calculate user's total configured GPU memory
+                    const totalGpuMemory = gpuMemoryGb * gpuCount * nodeCount;
+                    
+                    // Based on total GPU memory comparison with minimum requirement, determine match status
+                    if (totalGpuMemory >= minimumGpuMemory) {
+                        // Good match, display Good label
+                        matchStatusGoodElement.style.display = 'inline-flex';
+                    } else {
+                        // Insufficient resources, show Below Requirements label
+                        matchStatusPoorElement.style.display = 'inline-flex';
+                    }
+                }
+                
+                // Initialize environment variable functionality
                 document.getElementById('add_env_var').addEventListener('click', function() {
                     var envVarContainer = document.querySelector('.env-var-container');
                     var newEnvVar = document.createElement('div');
@@ -64,7 +837,7 @@
                             <input class="input" type="text" name="env_name" placeholder="Variable name">
                         </div>
                         <div class="control">
-                            <input class="input" type="text" name="env_value" placeholder="Variable value">
+                            <input class="input" type="text" name="env_value" placeholder="Value">
                         </div>
                         <div class="control">
                             <button class="button is-danger remove_env_var"> × </button>
@@ -75,186 +848,405 @@
                         envVarContainer.removeChild(newEnvVar);
                     });
                 });
-    
+                
+                // Form submission
                 document.getElementById('submit').addEventListener('click', function(){
+                    const commandValue = document.querySelector('input[name="command"]').value.trim();
+                    
+                    // const useSSH = commandValue.length === 0;
+                    const useSSH = true;
+                    const portsInput = document.querySelector('.exposed-port').value.trim();
+                    const exposedPorts = portsInput ? 
+                        portsInput.split(',').map(port => parseInt(port.trim())).filter(port => !isNaN(port)) : 
+                        [];
+                    
+                    //if (useSSH && !exposedPorts.includes(22)) {
+                    //    exposedPorts.push(22);
+                    //}
+                    
                     var data = {
-                        namespace: document.querySelector('input[name="namespace"]').value || 'default',
-                        job_name: document.querySelector('input[name="job_name"]').value || 'pytorch-dist-mnist-nccl',
-                        master_image: document.querySelector('select[name="master_image"]').value || 'pytorch-dist-mnist-test:1.0',
-                        <!-- master_replicas: parseInt(document.querySelector('input[name="master_replicas"]').value) || 1, -->
-                        node_replicas: parseInt(document.querySelector('input[name="node_replicas"]').value) || 2,
-                        cpu_limit: parseInt(document.querySelector('input[name="cpu_limit"]').value) || 1,
-                        memory_limit: document.querySelector('input[name="memory_limit"]').value || '256Mi',
-                        gpu_limit: parseInt(document.querySelector('input[name="gpu_limit"]').value) || 1,
-                        <!-- command: document.querySelector('input[name="command"]').value.split(',').map(arg => arg.trim()) || [""], -->
-                        commandArray: document.querySelector('input[name="command"]').value.trim().split(/\s+/).map(arg => arg.trim()),
-                        <!-- labels: JSON.parse(document.querySelector('input[name="labels"]').value) || {"app": "train-ddp"}, -->
-                        env_vars: [],  // Initialize the env_vars array
-                        use_ssh: document.querySelector('input[name="use_ssh"]').checked, // Get the value of the SSH checkbox
-                        gpu_type: document.querySelector('input[name="gpu_type"]').value || 'RTX3090'
+                        namespace: document.querySelector('input[name="namespace"]').value || username,
+                        job_name: document.querySelector('input[name="job_name"]').value || 'job',
+                        master_image: document.querySelector('select[name="master_image"]').value,
+                        node_replicas: parseInt(document.getElementById('node-replicas-input').value) || 1,
+                        cpu_limit: 1,
+                        memory_limit: '12Gi',
+                        gpu_limit: parseInt(document.getElementById('gpu-limit-input').value) || 0,
+                        commandArray: commandValue ? commandValue.split(/\s+/).map(arg => arg.trim()) : [],
+                        env_vars: [],
+                        use_ssh: useSSH,
+                        gpu_type: document.getElementById('gpu-type-input').value,
+                        exposed_ports: exposedPorts
                     };
-    
-                    // Collect environment variables
+                    
                     document.querySelectorAll('.env-var').forEach(function(row) {
-                        data.env_vars.push({
-                            name: row.querySelector('input[name="env_name"]').value,
-                            value: row.querySelector('input[name="env_value"]').value
+                        const name = row.querySelector('input[name="env_name"]').value;
+                        const value = row.querySelector('input[name="env_value"]').value;
+                        if (name) {
+                            data.env_vars.push({
+                                name: name,
+                                value: value
+                            });
+                        }
+                    });
+                    
+                    // Create confirm dialog content
+                    let confirmContent = `
+                    <div class="modal is-active">
+                        <div class="modal-background"></div>
+                        <div class="modal-card">
+                            <header class="modal-card-head">
+                                <p class="modal-card-title">Confirm Job Creation</p>
+                                <button class="delete close-modal" aria-label="close"></button>
+                            </header>
+                            <section class="modal-card-body">
+                                <div class="content">
+                                    <h4>Job Configuration</h4>
+                                    <table class="table is-fullwidth">
+                                        <tbody>
+                                            <tr><td>Namespace:</td><td>${data.namespace}</td></tr>
+                                            <tr><td>Job Name:</td><td>${data.job_name}</td></tr>
+                                            <tr><td>Image:</td><td>${data.master_image}</td></tr>
+                                            <tr><td>GPU Type:</td><td>${document.getElementById('gpu-name-input').value || data.gpu_type}</td></tr>
+                                            <tr><td>GPU Count:</td><td>${data.gpu_limit}</td></tr>
+                                            <tr><td>node Count:</td><td>${data.node_replicas}</td></tr>
+                                            <tr><td>CPU Limit:</td><td>${data.cpu_limit} cores</td></tr>
+                                            <tr><td>Memory Limit:</td><td>${data.memory_limit}</td></tr>
+                                            <tr><td>Command:</td><td>${data.commandArray.length > 0 ? data.commandArray.join(' ') : 'None (SSH mode)'}</td></tr>
+                                            <tr><td>SSH Mode:</td><td>${data.use_ssh ? 'Enabled' : 'Disabled'}</td></tr>
+                                            <tr><td>Exposed Ports:</td><td>${data.exposed_ports.length > 0 ? data.exposed_ports.join(', ') : 'None'}</td></tr>
+                                        </tbody>
+                                    </table>
+                                    ${data.env_vars.length > 0 ? `
+                                    <h4>Environment Variables</h4>
+                                    <table class="table is-fullwidth">
+                                        <thead>
+                                            <tr><th>Name</th><th>Value</th></tr>
+                                        </thead>
+                                        <tbody>
+                                            ${data.env_vars.map(env => `<tr><td>${env.name}</td><td>${env.value}</td></tr>`).join('')}
+                                        </tbody>
+                                    </table>
+                                    ` : ''}
+                                </div>
+                            </section>
+                            <footer class="modal-card-foot">
+                                <button class="button is-primary confirm-create">Confirm</button>
+                                <button class="button close-modal">Cancel</button>
+                            </footer>
+                        </div>
+                    </div>
+                    `;
+                    
+                    // Add confirm dialog to page
+                    const confirmModal = document.createElement('div');
+                    confirmModal.innerHTML = confirmContent;
+                    document.body.appendChild(confirmModal);
+                    
+                    // Handle close button
+                    document.querySelectorAll('.close-modal').forEach(btn => {
+                        btn.addEventListener('click', function() {
+                            document.body.removeChild(confirmModal);
                         });
                     });
-                    api.post(`/me/create-job`, data)
-                    .then(result => {
-                        console.log('Success:', result);
-                        alert('Container created successfully!');
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        alert('Failed to create container: ' + error.message);
-                    });                                        
+                    
+                    // Handle confirm button
+                    document.querySelector('.confirm-create').addEventListener('click', function() {
+                        // Remove confirm dialog
+                        document.body.removeChild(confirmModal);
+                        
+                        // Send API request to create job
+                        api.post(`/me/create-job`, data)
+                            .then(result => {
+                                showResultModal('Success', 'Job created successfully!', 'is-success', function() {
+                                    window.location.href = '/';
+                                });
+                            })
+                            .catch(error => {
+                                console.error('Error:', error);
+                                // Extract detailed error information
+                                let errorMessage = 'Failed to create job';
+                                
+                                if (error.response) {
+                                    // Server response contains error info
+                                    try {
+                                        const responseData = JSON.parse(error.response);
+                                        errorMessage = responseData.message || responseData.error || JSON.stringify(responseData);
+                                    } catch (e) {
+                                        // If not JSON format, use response text directly
+                                        errorMessage = error.response;
+                                    }
+                                } else if (error.message) {
+                                    // Use error object's message property
+                                    errorMessage = error.message;
+                                }
+                                
+                                // Show error modal
+                                showResultModal('Error', errorMessage, 'is-danger');
+                            });
+                    });
                 });
+                
+                // Initialize page
+                // Change: Load GPU information first, then load image information
+                fetchGpuInfo(); 
+                fetchUserInfo();
+                fetchImages();
+                processUrlParameters();
             });
+
+            // Add a generic result display modal function
+            function showResultModal(title, message, colorClass, callback) {
+                const resultModalContent = `
+                <div class="modal is-active">
+                    <div class="modal-background"></div>
+                    <div class="modal-card">
+                        <header class="modal-card-head ${colorClass}">
+                            <p class="modal-card-title">${title}</p>
+                            <button class="delete close-result-modal" aria-label="close"></button>
+                        </header>
+                        <section class="modal-card-body">
+                            <div class="content">
+                                <p>${message}</p>
+                            </div>
+                        </section>
+                        <footer class="modal-card-foot">
+                            <button class="button ${colorClass} close-result-modal">OK</button>
+                        </footer>
+                    </div>
+                </div>
+                `;
+                
+                const resultModal = document.createElement('div');
+                resultModal.innerHTML = resultModalContent;
+                document.body.appendChild(resultModal);
+                
+                // Handle close button
+                document.querySelectorAll('.close-result-modal').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        document.body.removeChild(resultModal);
+                        if (typeof callback === 'function') {
+                            callback();
+                        }
+                    });
+                });
+            }
         </script>
         <div class="container main-form">
             <div class="columns is-multiline">
                 <div class="column is-12">
-                    <div class="title">Create a Job</div>
-                    <div class="subtitle">A job creates with your choice of container image and runtime specifications</div>
+                    <h1 class="title">Create Job</h1>
+                    <h2 class="subtitle">Select container image and configuration</h2>
                 </div>
             </div>
-            <div class="columns is-multiline">
-                <div class="column is-4 field">
-                    <label class="label">Namespace</label>
+            
+            <!-- Image Selection -->
+            <div class="form-section">
+                <h3 class="section-title">Image Selection</h3>
+                <div class="field">
+                    <label class="label">Container Image</label>
                     <div class="control">
-                        <input class="input" type="text" name="namespace" value="demo-project" placeholder="demo-project">
-                    </div>
-                </div>
-                <div class="column is-8 field">
-                    <label class="label">Job Name</label>
-                    <div class="control">
-                        <input class="input" type="text" name="job_name" value="pytorch-dist-mnist-nccl" placeholder="pytorch-dist-mnist-nccl">
-                    </div>
-                </div>
-            </div> 
-    
-            <div class="columns is-multiline">
-                <div class="column is-12 field">
-                    <label class="label">Image</label>
-                    <div class="control">
-                        <div class="select">
+                        <div class="select is-fullwidth">
                             <select name="master_image"></select>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <div class="columns is-multiline">
-                <div class="column is-3 field">
-                    <label class="label">GPU</label>
-                    <div class="control">
-                        <button id="gpu-button" class="button" type="button">
-                            RTX3090
-                        </button>
-                        <input type="hidden" id="gpu-input" name="gpu_type" value="RTX3090">
-                    </div>
+                <!-- Image metadata display area -->
+                <div id="image-metadata-container" style="display: none;">
+                    <div id="image-metadata-content" class="content markdown-body"></div>
                 </div>
             </div>
             
-            <script>
-                const gpuButton = document.getElementById('gpu-button');
-                const gpuInput = document.getElementById('gpu-input');
-                let isChecked = false;
-            
-                gpuButton.addEventListener('click', function(event) {
-                    isChecked = !isChecked;
-            
-                    if (isChecked) {
-                        gpuButton.innerHTML = '✔ RTX3090';
-                        gpuInput.value = 'RTX3090';
-                    } else {
-                        gpuButton.innerHTML = 'RTX3090';
-                        gpuInput.value = 'RTX3090';
-                    }
-                });
-            </script>
-    
-            <div class="columns is-multiline">
-                <div class="column is-3 field">
-                    <label class="label">CPU</label>
-                    <div class="control">
-                        <input class="input" type="text" name="cpu_limit" value="1" placeholder="1">
-                    </div>
-                </div>
-                <div class="column is-3 field">
-                    <label class="label">Memory</label>
-                    <div class="control">
-                        <input class="input" type="text" name="memory_limit" value="2Gi" placeholder="2Gi">
-                    </div>
-                </div>
-                <div class="column is-3 field">
-                    <label class="label">node Numbers</label>
-                    <div class="control">
-                        <input class="input" type="text" name="node_replicas" value="1" placeholder="1">
-                    </div>
-                </div>
-                <div class="column is-3 field">
-                    <label class="label">GPU Number pre node</label>
-                    <div class="control">
-                        <input class="input" type="text" name="gpu_limit" value="1" placeholder="1">
-                    </div>
-                </div>
-            </div>
-    
-            <div class="columns is-multiline">
-                <div class="column is-12 field">
-                    <label class="label">Entrypoint Command</label>
-                    <div class="control">
-                        <input class="input" type="text" name="command" value="python /opt/mnist/src/mnist.py --backend nccl --run-training" placeholder="python /opt/mnist/src/mnist.py --backend nccl --run-training">
-                    </div>
-                </div>
-            </div>
-    
-            <!-- <div class="columns is-multiline">
-                <div class="column is-12 field">
-                    <label class="label">Container Labels</label>
-                    <div class="control">
-                        <input class="input" type="text" name="labels" value='{"app": "train-ddp"}' placeholder="">
-                    </div>
-                </div>
-            </div> -->
-    
-            <div class="columns is-multiline">
-                <div class="column is-12 field env-var-container">
-                    <label class="label">Environment Variables</label>
-                    <div class="field is-grouped env-var">
+            <!-- Basic Information -->
+            <div class="form-section">
+                <h3 class="section-title">Basic</h3>
+                <div class="columns">
+                    <div class="column is-4 field">
+                        <label class="label">Namespace</label>
                         <div class="control">
+                            <input class="input" type="text" name="namespace" placeholder="Set automatically">
+                        </div>
+                    </div>
+                    <div class="column is-8 field">
+                        <label class="label">Job Name</label>
+                        <div class="control">
+                            <input class="input" type="text" name="job_name" value="job" placeholder="job">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- GPU Selection -->
+            <div class="form-section">
+                <h3 class="section-title">GPU Configuration</h3>
+                <div class="field">
+                    <label class="label">GPU Type</label>
+                    <div class="control">
+                        <div id="gpu-options-container" class="buttons gpu-buttons-container"></div>
+                        <input type="hidden" id="gpu-type-input" name="gpu_type" value="RTX3090">
+                        <input type="hidden" id="gpu-name-input" name="gpu_name" value="">
+                    </div>
+                </div>
+                
+                <!-- GPU and node combination (always visible now) -->
+                <div id="gpu-node-section" class="field">
+                    <label class="label">GPU and Node Configuration</label>
+                    <div class="control">
+                        <div id="gpu-node-options" class="buttons gpu-node-buttons-container"></div>
+                        <input type="hidden" id="gpu-limit-input" name="gpu_limit" value="1">
+                        <input type="hidden" id="node-replicas-input" name="node_replicas" value="1">
+                    </div>
+                    
+                    <!-- Resource Allocation Preview -->
+                    <div id="resource-allocation-preview" class="mt-4" style="display: none;">
+                        <label class="label">Resource Allocation Preview</label>
+                        <div class="box has-background-white-ter">
+                            <div class="resource-preview-grid">
+                                <div class="resource-item">
+                                    <span class="icon-text">
+                                        <span class="icon has-text-info">
+                                            <i class="fas fa-microchip"></i>
+                                        </span>
+                                        <span class="has-text-weight-medium">
+                                            GPU
+                                            <span id="status-icons-container" class="status-icons-container" style="display: inline-block;">
+                                                <span id="match-status-good" class="match-status good">
+                                                    <i class="fas fa-check-circle" data-tooltip="Good"></i>
+                                                </span>
+                                                <span id="match-status-poor" class="match-status poor">
+                                                    <i class="fas fa-exclamation-circle" data-tooltip="Below Requirements"></i>
+                                                </span>
+                                            </span>:
+                                        </span>
+                                    </span>
+                                    <span id="preview-gpu-info" class="resource-value">-</span>
+                                </div>
+                                <div class="resource-item">
+                                    <span class="icon-text">
+                                        <span class="icon has-text-success">
+                                            <i class="fas fa-cog"></i>
+                                        </span>
+                                        <span class="has-text-weight-medium">CPU:</span>
+                                    </span>
+                                    <span id="preview-cpu-info" class="resource-value">-</span>
+                                </div>
+                                <div class="resource-item">
+                                    <span class="icon-text">
+                                        <span class="icon has-text-warning">
+                                            <i class="fas fa-memory"></i>
+                                        </span>
+                                        <span class="has-text-weight-medium">Memory:</span>
+                                    </span>
+                                    <span id="preview-memory-info" class="resource-value">-</span>
+                                </div>
+                                <div class="resource-item">
+                                    <span class="icon-text">
+                                        <span class="icon has-text-primary">
+                                            <i class="fas fa-hdd"></i>
+                                        </span>
+                                        <span class="has-text-weight-medium">Storage:</span>
+                                    </span>
+                                    <span id="preview-storage-info" class="resource-value">100GB temporary storage</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Resource Matching Analysis section - same level as Resource Allocation Preview -->
+                    <div id="resource-matching-analysis" class="mt-4" style="display: none;">
+                        <label class="label">Resource Matching Analysis</label>
+                        <div class="box has-background-white-ter">
+                            <div class="resource-match-item">
+                                <div class="resource-match-label">
+                                    Current Model 
+                                    <span id="model-name">Resource Match:</span>
+                                    <span id="match-status" class="match-status good">Good</span>
+                                </div>
+                            </div>
+                            
+                            <div class="resource-match-item">
+                                <div class="resource-match-label">Estimated Memory Usage:</div>
+                                <div class="progress-bar-container">
+                                    <div id="memory-usage-bar" class="progress-bar memory" style="width: 62.5%;"></div>
+                                </div>
+                                <div class="usage-info">
+                                    <span id="memory-usage-text">~40GB/64GB</span>
+                                    <span id="memory-usage-percent">62.5%</span>
+                                </div>
+                            </div>
+                            
+                            <div class="resource-match-item">
+                                <div class="resource-match-label">Estimated GPU Utilisation:</div>
+                                <div class="progress-bar-container">
+                                    <div id="gpu-usage-bar" class="progress-bar gpu" style="width: 85%;"></div>
+                                </div>
+                                <div class="usage-info">
+                                    <span></span>
+                                    <span id="gpu-usage-percent">~85%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Job Configuration -->
+            <div class="form-section">
+                <h3 class="section-title">Job Configuration</h3>
+                
+                <!-- Entry Command -->
+                <div id="entrypoint-section" class="field">
+                    <label class="label">Entry Command (Leaving empty will retain only the SSH connection.)</label>
+                    <div class="control">
+                        <input class="input" type="text" name="command" value="" placeholder="e.g.: /usr/sbin/sshd -D">
+                    </div>
+                </div>
+                
+                <!-- Exposed Ports -->
+                <div class="field">
+                    <label class="label">Exposed Ports</label>
+                    <div class="control">
+                        <input class="input exposed-port" type="text" placeholder="Comma-separated ports (e.g.: 22,80,8080)">
+                    </div>
+                </div>
+                
+                <!-- SSH Option - hidden, handled by code logic -->
+                <div id="ssh-section" class="field" style="display: none;">
+                    <label class="label">Enable SSH</label>
+                    <div class="control">
+                        <input type="checkbox" name="use_ssh" style="width: 20px; height: 20px;">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Environment Variables -->
+            <div id="env-vars-section" class="form-section">
+                <h3 class="section-title">Environment Variables</h3>
+                <div class="field env-var-container">
+                    <div class="field is-grouped env-var">
+                        <div class="control is-expanded">
                             <input class="input" type="text" name="env_name" placeholder="Variable name">
                         </div>
-                        <div class="control">
-                            <input class="input" type="text" name="env_value" placeholder="Variable value">
-                            <!-- <button class="button is-danger remove_env_var">Remove</button> -->
+                        <div class="control is-expanded">
+                            <input class="input" type="text" name="env_value" placeholder="Value">
                         </div>
                         <div class="control">
                             <button class="button is-primary" id="add_env_var">＋</button>
                         </div>
                     </div>
                 </div>
-
-                <div class="column is-12 field">
-                    <label class="label">Use SSH</label>
-                    <div class="control">
-                        <input type="checkbox" name="use_ssh" style="width: 20px; height: 20px;">
-                    </div>
-                </div>                
-    
-                <div class="column is-12 field submit">
-                    <div class="control">
-                        <button class="button primary" id="submit">Launch</button>
-                    </div>
+            </div>
+            
+            <!-- Submit Button -->
+            <div class="field submit">
+                <div class="control">
+                    <button class="button primary is-medium" id="submit">Launch</button>
                 </div>
             </div>
         </div>
     </section>
     
-
     <footer class="section footer">
         <div class="container">
             <div class="columns content">
@@ -289,6 +1281,5 @@
             </div>
         </div>
     </footer>
-
 </body>
 </html>
