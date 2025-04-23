@@ -55,16 +55,40 @@ class SingAPI {
                     error.response = xhr.responseText;
                     
                     try {
-                        error.responseData = JSON.parse(xhr.responseText);
+                        const errorData = JSON.parse(xhr.responseText);
+                        error.responseData = errorData;
+                        
+                        if (errorData.message) {
+                            error.message = errorData.message;
+                        }
+                        
+                        if (errorData.details) {
+                            try {
+                                const detailsObj = typeof errorData.details === 'string' ? 
+                                    JSON.parse(errorData.details) : errorData.details;
+                                error.details = detailsObj;
+                                
+                                if (detailsObj.message && !error.message.includes(detailsObj.message)) {
+                                    error.message += `: ${detailsObj.message}`;
+                                }
+                            } catch (e) {
+                                error.details = errorData.details;
+                            }
+                        }
                     } catch (e) {
+                        error.message = `Request failed with status ${xhr.status}`;
                     }
+                    
+                    console.error(`API Error (${xhr.status})`, error);
                     
                     reject(error);
                 }
             };
             
             xhr.onerror = function() {
-                reject(new Error('network error'));
+                const error = new Error('Network error occurred');
+                error.type = 'network_error';
+                reject(error);
             };
             
             xhr.send(JSON.stringify(data));
