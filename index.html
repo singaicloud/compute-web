@@ -76,13 +76,13 @@
                             pod_ids: job.pods,
                             pods: []
                         }));
-                        console.log('Jobs fetched:', jobs);
+                        // console.log('Jobs fetched:', jobs);
 
                         // Get pods data
                         return api.get('/me/pods')
                             .then(podsResponse => {
                                 pods = podsResponse[namespace];
-                                console.log('Pods fetched:', pods);
+                                // console.log('Pods fetched:', pods);
                             });
                 })
                 .then(() => {
@@ -253,6 +253,12 @@
                                                                 <span>Output</span>
                                                             </div>
                                                         ` : ''}
+                                                        ${containerStatusClass === 'status-failed' && container["Error Message"] && container["Error Message"] !== 'N/A' ? `
+                                                            <div class="action-item" onclick="showErrorMessage('${container["Error Message"].replace(/'/g, "\\'")}')">
+                                                                <i class="fa-regular fa-file"></i>
+                                                                <span>Error log</span>
+                                                            </div>
+                                                        ` : ''}
                                                         ${container["Status"] === 'Running' ? `
                                                         <div class="action-item" onclick="editContainer('${container["Pod IP"]}', '${container["Container Name"]}', '${container["Status"]}')">
                                                             <i class="pencil-icon"></i>
@@ -327,6 +333,11 @@
                     .catch(error => {
                         console.error('Error fetching log:', error);
                     });
+            };
+            
+            // show error message
+            window.showErrorMessage = function(errorMessage) {
+                showModal(errorMessage);
             };
                     
             // show ssh command
@@ -684,7 +695,7 @@
                 status = status.toLowerCase();
                 if (status === 'running') return 'status-running';
                 if (status === 'pending' || status === 'containercreating' || status === 'podinitialized') return 'status-pending';
-                if (status === 'failed' || status === 'error' || status === 'crashloopbackoff') return 'status-failed';
+                if (status === 'failed' || status === 'error' || status === 'crashloopbackoff' || status === 'unschedulable') return 'status-failed';
                 if (status === 'completed' || status === 'succeeded') return 'status-completed';
                 return 'status-unknown';
             }
