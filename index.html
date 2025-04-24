@@ -178,26 +178,20 @@
                                     <span class="job-name">${jobName}</span>
                                 </div>
                                 <div class="job-actions">
-                                    <div class="job-action-debug-button danger" onclick="event.stopPropagation(); deleteJob('${jobName}', '${namespace}', '${jobContainerId}')">
-                                        <!-- <i class="fa-regular fa-trash-alt"></i>
-                                            <span>Delete</span> -->
-                                    </div>
                                     <div class="job-action-button info" onclick="event.stopPropagation(); showSetupInfo('${jobName}')">
                                         <i class="fa-solid fa-info-circle"></i>
                                         <span>Info</span>
                                     </div>
-                                    ${status == 'Running' || status == 'Completed' ? `
-                                        <div class="job-action-button copy" onclick="event.stopPropagation(); cloneJob('${jobName}', '${jobContainerId}')">
-                                            <i class="fa-solid fa-clone"></i>
-                                            <span>Clone</span>
-                                        </div>
-                                    ` : ''}
-                                    ${status === 'Running' ? `
+                                    <!-- ${status === 'Running' ? `
                                         <div class="job-action-button stop" onclick="event.stopPropagation(); stopJob('${jobName}', '${namespace}', '${jobContainerId}')">
                                             <i class="fa-solid fa-stop"></i>
                                             <span>Stop</span>
                                         </div>
-                                    ` : ''}
+                                    ` : ''} -->
+                                    <div class="job-action-button danger" onclick="event.stopPropagation(); deleteJob('${jobName}', '${namespace}', '${jobContainerId}')">
+                                        <i class="fa-solid fa-trash"></i>
+                                        <span>Delete</span>
+                                    </div>
                                 </div>
                             </div>
                             <div class="job-meta">
@@ -247,7 +241,7 @@
                                             <div class="container-item-actions">
                                                 <div class="actions-container">
                                                     <div class="actions">
-                                                        ${container["Status"] === 'Completed' ? `
+                                                        ${containerStatusClass === 'status-completed' ? `
                                                             <div class="action-item" onclick="showContainerLog('${container["Namespace"]}', '${container["Container Name"]}')">
                                                                 <i class="fa-regular fa-file"></i>
                                                                 <span>Output</span>
@@ -259,22 +253,28 @@
                                                                 <span>Error log</span>
                                                             </div>
                                                         ` : ''}
-                                                        ${container["Status"] === 'Running' ? `
+                                                        ${containerStatusClass === 'status-running' ? `
                                                         <div class="action-item" onclick="editContainer('${container["Pod IP"]}', '${container["Container Name"]}', '${container["Status"]}')">
                                                             <i class="pencil-icon"></i>
                                                                 <span>Port</span>
                                                             </div>
                                                         ` : ''}
-                                                        ${container["Status"] === 'Running' ? `
+                                                        ${containerStatusClass === 'status-running' ? `
                                                             <div class="action-item" onclick="showSshCommand('${container["SSH Port"]}')">
                                                                 <i class="link-icon"></i>
                                                                 <span>SSH</span>
                                                             </div>
                                                         ` : ''}
-                                                        ${container["Status"] === 'Running' ? `
+                                                        ${containerStatusClass === 'status-running' ? `
                                                             <div class="action-item" onclick="connectSsh('${container["SSH Port"]}')">
                                                                 <i class="terminal-icon"></i>
                                                                 <span>Terminal</span>
+                                                            </div>
+                                                        ` : ''}
+                                                        ${containerStatusClass === 'status-running' ? `
+                                                            <div class="action-item" onclick="event.stopPropagation(); cloneJob('${jobName}', '${jobContainerId}')">
+                                                                <i class="fa-regular fa-clone"></i>
+                                                                <span>Clone</span>
                                                             </div>
                                                         ` : ''}
                                                     </div>
