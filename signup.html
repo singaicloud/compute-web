@@ -51,7 +51,7 @@
 
         .sign-up-container {
             width: 100%;
-            max-width: 450px;
+            max-width: 600px;
             padding: 30px;
             background-image: radial-gradient(100% 100% at top, rgba(157, 195, 247, .1), rgba(157, 195, 247, 0));
             background-color: rgba(92, 92, 92, 0.12);
@@ -61,6 +61,34 @@
             box-shadow: 0 10px 30px rgba(0, 119, 255, 0.15);
             margin: 20px 0;
         }
+
+        .sign-up-body {
+            display: flex;
+            flex-direction: column;
+        }
+
+
+        .form-columns {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 1rem;
+        }
+
+        #first-column,
+        #second-column {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Responsive adjustments */
+        @media screen and (max-width: 768px) {
+            .form-columns {
+                flex-direction: column;
+                gap: 0;
+            }
+        }
+
 
         .sign-up-header {
             text-align: center;
@@ -75,8 +103,8 @@
         }
 
         .sign-up-title {
-            margin-top: 1rem;
-            margin-bottom: 1rem;
+            margin-top: 0.5rem;
+            margin-bottom: 0.5rem;
             font-size: 1.8rem;
             background-image: linear-gradient(309deg, rgb(166, 221, 255) 2.25225%, rgb(51, 194, 255) 48.0785%, rgb(0, 119, 255) 100%);
             background-clip: text;
@@ -94,12 +122,8 @@
             margin-bottom: 1rem;
         }
 
-        .sign-up-body {
-            margin-top: 10px;
-        }
-
         .form-group {
-            margin-bottom: 1.2rem;
+            margin-bottom: 0.8rem;
         }
 
         .form-group label {
@@ -221,8 +245,6 @@
                 font-size: 1.6rem;
             }
         }
-
-        
     </style>
     <div class="globe-3d">
         <div class="wrapper"></div>
@@ -238,37 +260,47 @@
                 </div>
                 <div class="sign-up-body">
                     <form id="signup-form">
-                        <div class="form-group">
-                            <label for="username">Username</label>
-                            <input type="text" id="username" name="username" placeholder="e.g. johndoe"
-                                autocomplete="username" required>
+                        <div class="form-columns">
+                            <div id="first-column">
+                                <div class="form-group">
+                                    <label for="username">Username</label>
+                                    <input type="text" id="username" name="username" placeholder="e.g. johndoe"
+                                        autocomplete="username" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="first-name">First Name</label>
+                                    <input type="text" id="first-name" name="first-name" placeholder="John" required>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="password">Password <i>(minimum 8 characters)</i></label>
+                                    <input type="password" id="password" name="password" placeholder="••••••••"
+                                        autocomplete="new-password" required>
+                                </div>
+                            </div>
+
+                            <div id="second-column">
+                                <div class="form-group">
+                                    <label for="invite-code">Invite Code</label>
+                                    <input type="text" id="invite-code" name="invite-code"
+                                        placeholder="Enter your invite code" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="last-name">Last Name</label>
+                                    <input type="text" id="last-name" name="last-name" placeholder="Doe" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="confirm-password">Confirm Password</label>
+                                    <input type="password" id="confirm-password" name="confirm-password"
+                                        placeholder="••••••••" autocomplete="new-password" required>
+                                </div>
+
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label for="password">Password</label>
-                            <input type="password" id="password" name="password" placeholder="••••••••"
-                                autocomplete="new-password" required>
-                            <div class="password-hint">Minimum 8 characters</div>
-                        </div>
-                        <div class="form-group">
-                            <label for="confirm-password">Confirm Password</label>
-                            <input type="password" id="confirm-password" name="confirm-password" placeholder="••••••••"
-                                autocomplete="new-password" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="first-name">First Name</label>
-                            <input type="text" id="first-name" name="first-name" placeholder="John" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="last-name">Last Name</label>
-                            <input type="text" id="last-name" name="last-name" placeholder="Doe" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="invite-code">Invite Code</label>
-                            <input type="text" id="invite-code" name="invite-code" placeholder="Enter your invite code"
-                                required>
-                        </div>
+
                         <button type="submit" id="submit" class="btn">Create Account</button>
                     </form>
+
                     <div class="login-link">
                         Already have an account? <a href="login.html">Log in</a>
                     </div>

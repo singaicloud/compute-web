@@ -205,6 +205,9 @@
                     window.location.href = 'index.html';
                 } else {
                     alert('Invalid username or password');
+                    document.getElementById("submit").disabled = false;
+                    document.getElementById("submit").innerHTML = "Log in";
+
                 }
             });
         });
