@@ -63,7 +63,7 @@
                 // Get namespace for extracting pods data
                 api.get('/me').then(response => {
                     namespace = response.username;
-                    console.log('Namespace fetched:', namespace);
+                    // console.log('Namespace fetched:', namespace);
                 });
                 // Get jobs
                 api.get('/me/jobs').then(response => {
@@ -89,13 +89,13 @@
                         // Create a map of pod IDs to pod data for faster lookup
                         const podMap = new Map();
                         pods.forEach(pod => {
-                            podMap.set(pod["Container Name"], pod);
+                            podMap.set(pod["Job Name"] + "-" + pod["Container Name"], pod);
                         });
 
                         // Match detailed pod data to their jobs using the map
                         jobs.forEach(job => {
                             job.pods = job.pod_ids.map((podId, index) => {
-                                const pod = podMap.get(podId);
+                                const pod = podMap.get(job.job_name + "-" + podId);
                                 if (pod) {
                                     return pod;
                                 }
