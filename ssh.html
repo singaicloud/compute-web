@@ -35,7 +35,7 @@
                     socket.send('');
                     console.log('Heartbeat sent to keep connection alive');
                 }
-            }, 260000);
+            }, 30000);
         }
 
         socket.onopen = function() {
@@ -53,7 +53,6 @@
 
         socket.onclose = function() {
             term.write('\r\nConnection closed.\r\n');
-            // 连接关闭时清除心跳计时器
             if (heartbeatInterval) {
                 clearInterval(heartbeatInterval);
             }

@@ -592,10 +592,12 @@
                                     gpuButton.dataset.used = info.used;
                                     gpuButton.dataset.memory = gpuMemoryGb;
                                     gpuButton.dataset.name = gpuName;
-                                    gpuButton.textContent = `${gpuName} (${info.used}/${info.total})`;
                                     
-                                    // If no available GPUs, disable button
                                     const availableCount = info.total - info.used;
+                                    gpuButton.textContent = `${gpuName} (${availableCount})`;
+                                    // gpuButton.textContent = `${gpuName} (${info.used}/${info.total})`;
+                                    // If no available GPUs, disable button
+                                    
                                     if (availableCount <= 0) {
                                         gpuButton.disabled = true;
                                         gpuButton.classList.add('is-light');
