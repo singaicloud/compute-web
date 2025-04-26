@@ -133,6 +133,24 @@
             width: 100%;
             position: absolute;
         }
+
+        .sign-up-link {
+            text-align: center;
+            margin-top: 1.5rem;
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .sign-up-link a {
+            color: rgb(0, 153, 255);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .sign-up-link a:hover {
+            text-decoration: underline;
+        }
+
         @media screen and (max-width: 768px) {
             .globe-3d {
                 left: -50%;
@@ -166,7 +184,12 @@
                         <button type="submit" id="submit" class="btn btn-primary">Login</button> 
                     </div>
                 </form>
+                <div class="sign-up-link">
+                    Don't have an account yet? <a href="signup.html">Sign Up</a>
+                </div>
+    
             </div>
+
         </div>
     </div>
     <div class="globe-3d"><div class="wrapper"></div></div>
@@ -182,6 +205,9 @@
                     window.location.href = 'index.html';
                 } else {
                     alert('Invalid username or password');
+                    document.getElementById("submit").disabled = false;
+                    document.getElementById("submit").innerHTML = "Log in";
+
                 }
             });
         });
