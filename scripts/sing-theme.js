@@ -72,7 +72,7 @@ export class Navigation extends LitElement {
                         <div class="item"><a href="/">Jobs</a></div>
                         <div class="item"><a href="storage.html">Storage</a></div>
                         <div class="item"><a href="images.html">Images</a></div>
-                        <div class="item"><a href="#">Space</a></div>
+                        <div class="item"><a href="">Space</a></div>
                     </div>
                 </div>
             </div>

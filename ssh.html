@@ -22,9 +22,25 @@
         }
 
         const socket = new WebSocket(`wss://api.nova.singaicloud.com/ssh/${sessionId}`);
+        
+        let heartbeatInterval;
+        
+        function startHeartbeat() {
+            if (heartbeatInterval) {
+                clearInterval(heartbeatInterval);
+            }
+            
+            heartbeatInterval = setInterval(() => {
+                if (socket.readyState === WebSocket.OPEN) {
+                    socket.send('');
+                    console.log('Heartbeat sent to keep connection alive');
+                }
+            }, 30000);
+        }
 
         socket.onopen = function() {
             term.write('Connected to SSH...\r\n');
+            startHeartbeat();
         };
 
         socket.onmessage = function(event) {
@@ -37,6 +53,9 @@
 
         socket.onclose = function() {
             term.write('\r\nConnection closed.\r\n');
+            if (heartbeatInterval) {
+                clearInterval(heartbeatInterval);
+            }
         };
 
         socket.onerror = function(error) {

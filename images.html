@@ -29,6 +29,22 @@
 <body>
     <sing-navigation></sing-navigation>
 
+    <!-- Top fixed progress bar -->
+    <div id="topProgressContainer">
+        <div class="progress-header">
+            <div class="progress-title">
+                <span id="topProgressTitle">Upload progress</span>
+            </div>
+            <div class="progress-actions">
+                <div id="topProgressPercentage" class="has-text-weight-bold">0%</div>
+                <i id="cancelUpload" class="fas fa-times-circle" title="Cancel upload"></i>
+            </div>
+        </div>
+        <progress id="topProgressBar" class="progress is-primary" value="0" max="100"></progress>
+        <p id="topProgressStatus" class="has-text-centered">Preparing upload...</p>
+        <div id="operationMessage">Operation in progress. Please wait until completion.</div>
+    </div>
+
     <section class="section content"> 
         <div class="container">
             <h1 class="title">Available Images</h1>
@@ -40,6 +56,7 @@
                     <i class="fas fa-globe-americas mr-2"></i> Public Image Repository
                 </div>
                 <div class="repository-content">
+                    <div id="deleteResultInPublic" class="notification is-hidden mb-4"></div>
                     <div class="filter-search-box">
                         <div class="field">
                             <label class="label">Filter/Search</label>
@@ -54,14 +71,12 @@
                     <table id="publicImageTable" class="image-table">
                         <thead>
                             <tr>
-                                <th>Image Repository</th>
                                 <th>Image Name</th>
                                 <th>Tag</th>
                                 <th>Size</th>
                                 <th>Last Updated</th>
                                 <th>Details</th>
                                 <th>Actions</th>
-                                <th>Label</th>
                             </tr>
                         </thead>
                         <tbody id="publicImageTableBody"></tbody>
@@ -75,6 +90,7 @@
                     <i class="fas fa-lock mr-2"></i> Private Image Repository
                 </div>
                 <div class="repository-content">
+                    <div id="deleteResultInPrivate" class="notification is-hidden mb-4"></div>
                     <div class="filter-search-box">
                         <div class="field">
                             <label class="label">Filter/Search</label>
@@ -89,14 +105,12 @@
                     <table id="privateImageTable" class="image-table">
                         <thead>
                             <tr>
-                                <th>Source</th>
                                 <th>Image Name</th>
                                 <th>Tag</th>
                                 <th>Size</th>
                                 <th>Last Updated</th>
                                 <th>Details</th>
                                 <th>Actions</th>
-                                <th>Label</th>
                             </tr>
                         </thead>
                         <tbody id="privateImageTableBody"></tbody>
@@ -125,13 +139,56 @@
                         <div id="localUpload" class="tab-pane active">
                             <form id="uploadForm" enctype="multipart/form-data">
                                 <div class="field">
-                                    <label class="label">Select .tar file</label>
-                                    <div class="control">
-                                        <input type="file" name="file" id="fileInput" class="input" accept=".tar" required>
+                                    <label class="label"><b>Upload Type</b></label>
+                                    <div class="control upload-type-radio">
+                                        <label class="radio-container" for="dockerTarRadio">
+                                            <input type="radio" name="uploadType" id="dockerTarRadio" value="docker-tar" checked>
+                                            <span class="radio-label">Docker image file</span>
+                                            
+                                        </label>
+                                        <label class="radio-container" for="dockerfilePackageRadio">
+                                            <input type="radio" name="uploadType" id="dockerfilePackageRadio" value="dockerfile-package">
+                                            <span class="radio-label">Dockerfile project package</span>
+                                            
+                                        </label>
                                     </div>
-                                    <p class="help">Choose a Docker image tar file to upload</p>
                                 </div>
-                                <div class="control">
+                                
+                                <div id="dockerTarUpload" class="upload-type-container">
+                                    <div class="field">
+                                        <label class="label"><b>Select Image File (.tar)</b></label>
+                                        <div class="file-input-container">
+                                            <div class="image-name-input">
+                                                <input type="text" name="tar-image-name" id="tarImageName" placeholder="image:tag (default tag is latest)">
+                                                <div class="validation-message-container"></div>
+                                            </div>
+                                            <div class="file-input-wrapper">
+                                                <input type="file" name="file" id="fileInput" accept=".tar" required>
+                                            </div>
+                                        </div>
+                                        <p class="help">image tar file exported by <code>docker save</code></p>
+                                    </div>
+                                </div>
+                                
+                                <div id="dockerfileUpload" class="upload-type-container" style="display: none;">
+                                    <div class="field">
+                                        <label class="label"><b>Select Project Package (.zip/.rar)</b></label>
+                                        <div class="file-input-container">
+                                            
+                                            <div class="image-name-input">
+                                                <input type="text" name="dockerfile-image-name" id="dockerfileImageName" placeholder="image:tag (default tag is latest)">
+                                                <div class="validation-message-container"></div>
+                                            </div> 
+                                            
+                                            <div class="file-input-wrapper">
+                                                <input type="file" name="project-file" id="projectFileInput" accept=".zip,.rar" required>
+                                            </div>
+                                        </div>
+                                        <p class="help">compressed project package including a <code>Dockerfile</code>, filename will be used as image name</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="control mt-2">
                                     <button type="button" id="uploadButton" class="button is-primary">
                                         <i class="fas fa-upload mr-2"></i>Upload Image
                                     </button>
@@ -141,6 +198,7 @@
                         
                         <!-- Fetch from URLs Tab -->
                         <div id="fetchUrl" class="tab-pane" style="display: none;">
+                            <!-- 
                             <div class="input-row">
                                 <div class="auth-dropdown">
                                     <label class="label">Select private image registry auth</label>
@@ -155,15 +213,16 @@
                                     <i class="fas fa-plus"></i> Registry Auth
                                 </button>
                             </div>
+                            -->
                             <div class="field">
-                                <label class="label">URL</label>
+                                <label class="label"><b>Image URL</b></label>
                                 <div class="control has-icons-left">
-                                    <input type="text" id="urlInput" class="input" placeholder="e.g., nvcr.io/nvidia/pytorch:24.11-py3">
+                                    <input type="text" id="urlInput" class="input" placeholder="image:tag (e.g., nginx:stable-perl, tensorflow:latest)">
                                     <span class="icon is-small is-left">
                                         <i class="fas fa-link"></i>
                                     </span>
                                 </div>
-                                <p class="help">Enter the URL of the Docker image to fetch</p>
+                                <p class="help">image URL in public dockerhub repository using <code>docker pull</code></p>
                             </div>
                             <div class="control">
                                 <button type="button" id="fetchButton" class="button is-primary">
@@ -172,7 +231,10 @@
                             </div>
                         </div>
                     </div>
-                    <div id="uploadResult" class="notification is-hidden"></div>
+                    <div id="uploadResult" class="notification is-hidden">
+                        <i class="simple-close-btn fas fa-times" aria-label="close"></i>
+                        <span id="uploadResultText"></span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -214,13 +276,135 @@
     </footer>
 
     <script>
+        // store current XHR request for cancellation
+        let currentUploadXHR = null;
+        
+        // time in ms to display "completed" status
+        const COMPLETION_DISPLAY_TIME_MS = 60000; 
+        
+        // time in ms to auto-hide error messages
+        const ERROR_MESSAGE_DISPLAY_TIME_MS = 30000;
+
+        // time in ms to auto-hide delete results messages
+        const DELETE_IMAGE_MESSAGE_DISPLAY_TIME_MS = 10000;
+        
+        // frozen effect when uploading or fetching images
+        function disableAllButtons() {
+            // frozen overlay to main content
+            document.querySelector('.container').classList.add('upload-frozen', 'active');
+
+            // disable functions in pages
+            document.querySelectorAll('.control mt-2').forEach(button => {
+                button.style.pointerEvents = 'none';
+            });
+            document.querySelectorAll('.tab-content').forEach(button => {
+                button.style.pointerEvents = 'none';
+            });
+            document.querySelectorAll('.view-button').forEach(button => {
+                button.style.pointerEvents = 'none';
+            });
+            document.querySelectorAll('.action-buttons a').forEach(link => {
+                link.style.pointerEvents = 'none';
+            });
+            document.querySelectorAll('.add-button').forEach(button => {
+                button.style.pointerEvents = 'none';
+            });
+            document.querySelectorAll('input[type="file"]').forEach(input => {
+                input.style.pointerEvents = 'none';
+            });
+            document.querySelectorAll('input[type="radio"]').forEach(radio => {
+                radio.style.pointerEvents = 'none';
+            });
+            document.querySelectorAll('.tab-item').forEach(tab => {
+                tab.style.pointerEvents = 'none';
+            });
+            document.querySelectorAll('input[type="text"]').forEach(input => {
+                input.style.pointerEvents = 'none';
+            });
+        }
+        
+        function enableAllButtons() {
+            // Remove frozen overlay effect from main content
+            document.querySelector('.container').classList.remove('upload-frozen', 'active');
+            
+            // Re-enable all buttons
+            document.querySelectorAll('.control mt-2').forEach(button => {
+                button.style.pointerEvents = '';
+            });
+            document.querySelectorAll('.tab-content').forEach(button => {
+                button.style.pointerEvents = '';
+            });
+            document.querySelectorAll('.view-button').forEach(button => {
+                button.style.pointerEvents = '';
+            });
+            document.querySelectorAll('.action-buttons a').forEach(link => {
+                link.style.pointerEvents = '';
+            });
+            document.querySelectorAll('.add-button').forEach(button => {
+                button.style.pointerEvents = '';
+            });
+            document.querySelectorAll('input[type="file"]').forEach(input => {
+                input.style.pointerEvents = '';
+            });
+            document.querySelectorAll('input[type="radio"]').forEach(radio => {
+                radio.style.pointerEvents = '';
+            });
+            document.querySelectorAll('.tab-item').forEach(tab => {
+                tab.style.pointerEvents = '';
+            });
+            document.querySelectorAll('input[type="text"]').forEach(input => {
+                input.style.pointerEvents = '';
+            });
+            
+        }
+
         // Fetch and render images from API
         document.addEventListener('DOMContentLoaded', function() {
+
+            // Status Displaying: track image status from localStorage to ensure the display of the newest status
+            // it is used to display the status of the image even when the page is refreshed
+            imageStatusMap = {};
+            
+            // Image Info Fetching: fetch image info from API
             fetchImageInfo();
-            // Add Images
+            
+            // Cancel Upload Button: setup cancel upload button
+            document.getElementById("cancelUpload").addEventListener("click", function() {
+                if (currentUploadXHR) {
+                    // Abort the current XHR request
+                    currentUploadXHR.abort();
+                    
+                    // Hide progress modal
+                    document.getElementById("topProgressContainer").classList.remove("visible");
+                    
+                    // Re-enable all buttons
+                    enableAllButtons();
+                    
+                    // Reset current XHR reference
+                    currentUploadXHR = null;
+                }
+            });
+
+            // Status Displaying: clean up resources when the page is unloaded
+            window.addEventListener('beforeunload', function() {
+                if (autoRefreshInterval) {
+                    clearInterval(autoRefreshInterval);
+                    autoRefreshInterval = null;
+                }
+                
+                // Clear the status tracking object
+                imageStatusMap = {};
+                
+                // Also abort unfinished XHR requests when the page is unloaded
+                if (currentUploadXHR) {
+                    currentUploadXHR.abort();
+                    currentUploadXHR = null;
+                }
+            });
+            
+            // Add Images Button: show or hide upload plane
             document.getElementById("addImagesBtn").addEventListener("click", function() {
                 const uploadOptions = document.getElementById("uploadOptions");
-                
                 if (uploadOptions.style.display === "none" || uploadOptions.style.display === "") {
                     uploadOptions.style.display = "block";
                 } else {
@@ -228,94 +412,638 @@
                 }
             });
             
-            // Tab
+            // Switch Tabs: hightlight the chosen tab and hide other tabs
             document.querySelectorAll('.tab-item').forEach(tab => {
                 tab.addEventListener('click', function() {
-                    // Remove active class from all tabs
                     document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
-                    // Add active class to clicked tab
                     this.classList.add('active');
-                    
-                    // Hide all tab panes
                     document.querySelectorAll('.tab-pane').forEach(pane => pane.style.display = 'none');
-                    // Show the corresponding tab pane
                     const tabId = this.getAttribute('data-tab');
                     document.getElementById(tabId).style.display = 'block';
                 });
             });
             
-            // Search for public images
+            // Upload Type Radios: show or hide the corresponding upload page upon selection
+            document.querySelectorAll('input[name="uploadType"]').forEach(radio => {
+                radio.addEventListener('change', function() {
+                    const selectedType = this.value;
+                    document.querySelectorAll('.upload-type-container').forEach(container => {
+                        container.style.display = 'none';
+                    });
+                    // Show the selected upload container
+                    if (selectedType === "docker-tar") {
+                        document.getElementById("dockerTarUpload").style.display = "block";
+                    } else if (selectedType === "dockerfile-package") {
+                        document.getElementById("dockerfileUpload").style.display = "block";
+                    }
+                });
+            });
+            
+            // Validation for Tar File when Selecting a File: validate if the selected file is .tar and trigger image name validation
+            document.getElementById('fileInput').addEventListener('change', function() {
+                const file = this.files[0];
+                if (file) {
+                    const fileName = file.name.toLowerCase();
+                    if (!fileName.endsWith('.tar')) {
+                        alert("Please select a valid .tar file");
+                        this.value = '';
+                    } else {
+                        // Trigger validation of the image name input when file selection changes
+                        const tarImageNameInput = document.getElementById('tarImageName');
+                        tarImageNameInput.dispatchEvent(new Event('input'));
+                    }
+                } else {
+                    // If file selection is cleared, also trigger validation
+                    const tarImageNameInput = document.getElementById('tarImageName');
+                    tarImageNameInput.dispatchEvent(new Event('input'));
+                }
+            });
+            
+            // Validation for Project Package File when Selecting a File: validate if the selected file is .zip or .rar and trigger image name validation
+            document.getElementById('projectFileInput').addEventListener('change', function() {
+                const file = this.files[0];
+                if (file) {
+                    const fileName = file.name.toLowerCase();
+                    if (!fileName.endsWith('.zip') && !fileName.endsWith('.rar')) {
+                        alert("Only .zip and .rar files are supported for project packages");
+                        this.value = '';
+                    } else {
+                        // Trigger validation of the image name input when file selection changes
+                        const dockerfileImageNameInput = document.getElementById('dockerfileImageName');
+                        dockerfileImageNameInput.dispatchEvent(new Event('input'));
+                    }
+                } else {
+                    // If file selection is cleared, also trigger validation
+                    const dockerfileImageNameInput = document.getElementById('dockerfileImageName');
+                    dockerfileImageNameInput.dispatchEvent(new Event('input'));
+                }
+            });
+            
+            // Validation for Dockerfile Image Name Input: validate the image name and tag
+            document.getElementById('dockerfileImageName').addEventListener('input', function() {
+                const value = this.value;
+                const messageContainer = this.parentNode.querySelector('.validation-message-container');
+                const imageInfo = value.trim();
+                let imageNameValue;
+                let tagValue;
+                if (imageInfo.includes(':')) {
+                    imageNameValue = imageInfo.split(':').slice(0, -1).join(':');
+                    tagValue = imageInfo.split(':').slice(-1)[0];
+                } else {
+                    imageNameValue = imageInfo;
+                    tagValue = '';
+                }
+                
+                // Clear existing validation message first to ensure consistent state
+                messageContainer.innerHTML = '';
+                
+                // Check if both image name is empty AND file is selected
+                const fileInput = document.getElementById('projectFileInput');
+                if (imageNameValue === '' && (fileInput.files && fileInput.files.length > 0)) {
+                    this.classList.add('is-danger');
+                    // Create and append validation message for empty name
+                    const message = document.createElement('p');
+                    message.className = 'validation-message is-danger';
+                    message.textContent = 'image name is required';
+                    messageContainer.appendChild(message);
+                } 
+                // Check image name value - only lowercase letters, numbers, dashes are allowed and should start with a lowercase letter
+                else if (imageNameValue !== '' && !(/^[a-z][a-z0-9-]*$/.test(imageNameValue))) {
+                    this.classList.add('is-danger');
+                    // Create and append validation message
+                    const message = document.createElement('p');
+                    message.className = 'validation-message is-danger';
+                    message.textContent = 'only lowercase letters, numbers, or dashes are allowed in image name';
+                    messageContainer.appendChild(message);
+                } else {
+                    this.classList.remove('is-danger');
+                }
+                
+                // Check tag value - allow lowercase letters, numbers, dashes and dots
+                if (tagValue !== '' && !/^[a-z0-9\-\.]*$/.test(tagValue)) {
+                    this.classList.add('is-danger');
+                    // Create validation message if not already present
+                    if (!messageContainer.querySelector('.validation-message')) {
+                        const message = document.createElement('p');
+                        message.className = 'validation-message is-danger';
+                        message.textContent = 'Tag must contain only lowercase letters, numbers, dashes, or dots';
+                        messageContainer.appendChild(message);
+                    }
+                }
+            }); 
+            
+            // Validation for Tar Image Name Input: validate the image name and tag
+            document.getElementById('tarImageName').addEventListener('input', function() {
+                const value = this.value;
+                const messageContainer = this.parentNode.querySelector('.validation-message-container');
+                const imageInfo = value.trim();
+                let imageNameValue;
+                let tagValue;
+                if (imageInfo.includes(':')) {
+                    imageNameValue = imageInfo.split(':').slice(0, -1).join(':');
+                    tagValue = imageInfo.split(':').slice(-1)[0];
+                } else {
+                    imageNameValue = imageInfo;
+                    tagValue = '';
+                }
+
+                // Clear existing validation message first to ensure consistent state
+                messageContainer.innerHTML = '';
+                // Check if both image name is empty AND file is selected
+                const fileInput = document.getElementById('fileInput');
+                if (imageNameValue === '' && (fileInput.files && fileInput.files.length > 0)) {
+                    this.classList.add('is-danger');
+                    // Create and append validation message for empty name
+                    const message = document.createElement('p');
+                    message.className = 'validation-message is-danger';
+                    message.textContent = 'image name is required';
+                    messageContainer.appendChild(message);
+                }
+                // Check image name value - only lowercase letters, numbers, dashes are allowed and should start with a lowercase letter
+                else if (imageNameValue !== '' && !(/^[a-z][a-z0-9-]*$/.test(imageNameValue))) {
+                    this.classList.add('is-danger');
+                    // Create and append validation message
+                    const message = document.createElement('p');
+                    message.className = 'validation-message is-danger';
+                    message.textContent = 'only lowercase letters, numbers, or dashes are allowed in image name';
+                    messageContainer.appendChild(message);
+                } else {
+                    this.classList.remove('is-danger');
+                }
+
+                // Check tag value - allow lowercase letters, numbers, dashes and dots
+                if (tagValue !== '' && !/^[a-z0-9\-\.]*$/.test(tagValue)) {
+                    this.classList.add('is-danger');
+                    // Create validation message if not already present
+                    if (!messageContainer.querySelector('.validation-message')) {
+                        const message = document.createElement('p');
+                        message.className = 'validation-message is-danger';
+                        message.textContent = 'Tag must contain only lowercase letters, numbers, dashes, or dots';
+                        messageContainer.appendChild(message);
+                    }
+                }
+            });
+            
+            // Query field for public images
             document.getElementById('publicSearchInput').addEventListener('keyup', function() {
                 filterTable('publicImageTableBody', this.value);
             });
             
-            // Search for private images
+            // Query field for private images
             document.getElementById('privateSearchInput').addEventListener('keyup', function() {
                 filterTable('privateImageTableBody', this.value);
             });
             
-            // Upload from local for private images
+            // Upload Button: upload from local for private images
             document.getElementById("uploadButton").addEventListener("click", function() {
-                var fileInput = document.getElementById("fileInput").files[0];
-                var formData = new FormData();
-                formData.append("file", fileInput);
+                const uploadType = document.querySelector('input[name="uploadType"]:checked').value;
+                let fileInput;
+                let formData = new FormData();
+                let apiEndpoint;
 
-                api.postForm(`/me/upload-image`, formData)
-                .then(data => {
-                    var uploadResult = document.getElementById("uploadResult");
-                    uploadResult.classList.remove("is-hidden");
-                    uploadResult.classList.add(data.error ? "is-danger" : "is-success");
-                    uploadResult.textContent = data.message || data.error;
-                    // Refresh image list after upload
+                // Hide previous result notification
+                const uploadResult = document.getElementById("uploadResult");
+                uploadResult.classList.add("is-hidden");
+                
+                // Setup center progress modal
+                const topProgressContainer = document.getElementById("topProgressContainer");
+                const topProgressBar = document.getElementById("topProgressBar");
+                const topProgressPercentage = document.getElementById("topProgressPercentage");
+                const topProgressStatus = document.getElementById("topProgressStatus");
+                const topProgressTitle = document.getElementById("topProgressTitle");
+                
+                // Configure and show progress modal
+                topProgressTitle.textContent = "Upload progress";
+                topProgressBar.value = 0;
+                topProgressPercentage.textContent = "0%";
+                topProgressStatus.textContent = "Uploading...";
+                topProgressContainer.classList.add("visible");
+                
+                // Disable all buttons during upload
+                disableAllButtons();
+                
+                if (uploadType === "docker-tar") {
+                    fileInput = document.getElementById("fileInput").files[0];
+                    if (!fileInput) {
+                        alert("Please select a .tar file");
+                        topProgressContainer.classList.remove("visible");
+                        enableAllButtons();
+                        return;
+                    }
+                    if (!fileInput.name.toLowerCase().endsWith('.tar')) {
+                        alert("Please select a valid .tar file");
+                        topProgressContainer.classList.remove("visible");
+                        enableAllButtons();
+                        return;
+                    }
+
+                    // Input type: image-name:tag
+                    const imageInfoInput = document.getElementById("tarImageName");
+                    const imageInfo = imageInfoInput.value.trim();
+                    let imageNameValue;
+                    let tagValue;
+                    if (imageInfo.includes(':')) {
+                        imageNameValue = imageInfo.split(':').slice(0, -1).join(':');
+                        tagValue = imageInfo.split(':').slice(-1).join(':');
+                    } else {
+                        imageNameValue = imageInfo;
+                        // if no tag is provided, use 'latest' as the default tag
+                        tagValue = 'latest';
+                    }
+
+                    // Validate custom image name if provided
+                    if (imageNameValue !== '' && !/^[a-z][a-z0-9-]*$/.test(imageNameValue)) {
+                        alert("Image name must start with a lowercase letter and contain only lowercase letters, numbers, or dashes (underscores are not allowed)");
+                        topProgressContainer.classList.remove("visible");
+                        enableAllButtons();
+                        return;
+                    } else if (imageNameValue === '') {
+                        alert("Image name is required");
+                        topProgressContainer.classList.remove("visible");
+                        enableAllButtons();
+                        return;
+                    }
+
+                    // Validate tag value if provided
+                    if (tagValue !== '' && !/^[a-z0-9\-\.]*$/.test(tagValue)) {
+                        alert("Tag must contain only lowercase letters, numbers, dashes, or dots");
+                        topProgressContainer.classList.remove("visible");
+                        enableAllButtons();
+                        return;
+                    }
+
+                    // Append form data and specify the endpoint
+                    formData.append("file", fileInput);
+                    formData.append('tag', tagValue);
+                    formData.append('image-name', imageNameValue);
+                    apiEndpoint = '/me/upload-image-tar';
+                } else if (uploadType === "dockerfile-package") {
+                    fileInput = document.getElementById("projectFileInput").files[0];
+                    if (!fileInput) {
+                        alert("Please select a project package");
+                        topProgressContainer.classList.remove("visible");
+                        enableAllButtons();
+                        return;
+                    }
+                    // Validate file extension for project package
+                    const fileName = fileInput.name.toLowerCase();
+                    if (!fileName.endsWith('.zip') && !fileName.endsWith('.rar')) {
+                        alert("Only .zip and .rar files are supported for project packages");
+                        topProgressContainer.classList.remove("visible");
+                        enableAllButtons();
+                        return;
+                    }
+
+                    // Input type: image-name:tag
+                    const imageInfoInput = document.getElementById("dockerfileImageName");
+                    const imageInfo = imageInfoInput.value.trim();
+                    let imageNameValue;
+                    let tagValue;
+                    if (imageInfo.includes(':')) {
+                        imageNameValue = imageInfo.split(':').slice(0, -1).join(':');
+                        tagValue = imageInfo.split(':').slice(-1).join(':');
+                    } else {
+                        imageNameValue = imageInfo;
+                        tagValue = 'latest';
+                    }
+
+                    // Validate custom image name if provided
+                    if (imageNameValue !== '' && !/^[a-z][a-z0-9-]*$/.test(imageNameValue)) {
+                        alert("Image name must start with a lowercase letter and contain only lowercase letters, numbers, or dashes (underscores are not allowed)");
+                        topProgressContainer.classList.remove("visible");
+                        enableAllButtons();
+                        return;
+                    } else if (imageNameValue === '') {
+                        alert("Image name is required");
+                        topProgressContainer.classList.remove("visible");
+                        enableAllButtons();
+                        return;
+                    }
+
+                    // Validate tag value if provided
+                    if (tagValue !== '' && !/^[a-z0-9\-\.]*$/.test(tagValue)) {
+                        alert("Tag must contain only lowercase letters, numbers, dashes, or dots");
+                        topProgressContainer.classList.remove("visible");
+                        enableAllButtons();
+                        return;
+                    }
+
+                    // Append form data and specify the endpoint
+                    formData.append("file", fileInput);
+                    formData.append('tag', tagValue);
+                    formData.append('image-name', imageNameValue);
+                    apiEndpoint = '/me/upload-dockerfile';
+                }
+                
+                // Update progress status with file info
+                topProgressStatus.textContent = `Uploading ${fileInput.name} (${formatFileSize(fileInput.size)})`;
+                // Create and configure XHR for progress tracking
+                const xhr = new XMLHttpRequest();
+                // Store XHR reference to control cancellation
+                currentUploadXHR = xhr;
+                
+                // Initialize the API endpoint with xhr.open
+                xhr.open('POST', api.baseUrl + apiEndpoint, true);
+                if (api.token) {
+                    xhr.setRequestHeader('Authorization', 'Bearer ' + api.token);
+                }
+
+                // Update progress bar
+                xhr.upload.onprogress = function(e) {
+                    if (e.lengthComputable) {
+                        const percentComplete = Math.round((e.loaded / e.total) * 100);
+                        topProgressBar.value = percentComplete;
+                        topProgressPercentage.textContent = percentComplete + "%";
+                        // the progress demonstrates the percentage of the file that has been uploaded
+                        if (percentComplete < 25) {
+                            topProgressStatus.textContent = `Starting upload: ${formatFileSize(e.loaded)} of ${formatFileSize(e.total)}`;
+                        } else {
+                            topProgressStatus.textContent = `Uploading: ${formatFileSize(e.loaded)} of ${formatFileSize(e.total)}`;
+                        }
+                    }
+                };
+                
+                // Upload Completed: asynchronously processing upon the completion of the upload
+                // this will not block user interaction and server will asynchronously build the image
+                xhr.upload.onload = function() {
+                    // Hide progress bar when upload is complete (regardless of server processing result)
+                    topProgressContainer.classList.remove("visible");
+                    enableAllButtons();
+                    
+                    // Refresh the image list to show the status
                     fetchImageInfo();
-                })
-                .catch(error => {
-                    console.log("Error uploading image:", error);
-                    var uploadResult = document.getElementById("uploadResult");
-                    uploadResult.classList.remove("is-hidden");
+                };
+                
+                // Image Creation Completed: the entire request is completed thus processing the response
+                xhr.onload = function() {
+                    // Reset current XHR reference
+                    currentUploadXHR = null;
+                    
+                    // 500 represents building errors thus we ignore it
+                    if (xhr.status >= 400 && xhr.status < 600 && xhr.status !== 500) {
+                        try {
+                            const response = JSON.parse(xhr.responseText);
+                            uploadResult.classList.remove("is-hidden", "is-success");
+                            uploadResult.classList.add("is-danger");
+                            document.getElementById('uploadResultText').textContent = response.error || response.message || "Upload failed with status: " + xhr.status;
+                            
+                            setTimeout(() => {
+                                uploadResult.classList.add("is-hidden");
+                            }, ERROR_MESSAGE_DISPLAY_TIME_MS);
+                        } catch (e) {
+                            uploadResult.classList.remove("is-hidden", "is-success");
+                            uploadResult.classList.add("is-danger");
+                            document.getElementById('uploadResultText').textContent = "Upload failed with status: " + xhr.status;
+                            
+                            setTimeout(() => {
+                                uploadResult.classList.add("is-hidden");
+                            }, ERROR_MESSAGE_DISPLAY_TIME_MS);
+                        }
+                    } else if (xhr.status >= 200 && xhr.status < 300) {
+                        // For successful status codes, check for specific error messages
+                        try {
+                            const response = JSON.parse(xhr.responseText);
+                            if (response.error || (response.message && (response.message.includes("same digest") || response.message.includes("already exists")))) {
+                                // These are special cases that should be treated as upload errors
+                                uploadResult.classList.remove("is-hidden", "is-success");
+                                uploadResult.classList.add("is-danger");
+                                document.getElementById('uploadResultText').textContent = response.error || response.message;
+                                
+                                setTimeout(() => {
+                                    uploadResult.classList.add("is-hidden");
+                                }, ERROR_MESSAGE_DISPLAY_TIME_MS);
+                            } else {
+                                // Normal success - hide the upload result
+                                uploadResult.classList.add("is-hidden");
+                            }
+                        } catch (e) {
+                            // If can't parse the response, show error message
+                            uploadResult.classList.remove("is-hidden", "is-success");
+                            uploadResult.classList.add("is-danger");
+                            document.getElementById('uploadResultText').textContent = response.error || response.message || "Error processing server response: Invalid format";
+                            
+                            setTimeout(() => {
+                                uploadResult.classList.add("is-hidden");
+                            }, ERROR_MESSAGE_DISPLAY_TIME_MS);
+                        }
+                    } else {
+                        // For 500 status codes, hide the uploadResult
+                        uploadResult.classList.add("is-hidden");
+                    }
+                    
+                    // Refresh the image list to show the status (including build errors)
+                    fetchImageInfo();
+                };
+                
+                // Upload error
+                xhr.onerror = function() {
+                    topProgressContainer.classList.remove("visible");
+                    uploadResult.classList.remove("is-hidden", "is-success");
                     uploadResult.classList.add("is-danger");
-                    uploadResult.textContent = "Error uploading image.";
-                });
+                    document.getElementById('uploadResultText').textContent = "Network error during upload";
+                    
+                    setTimeout(() => {
+                        uploadResult.classList.add("is-hidden");
+                    }, ERROR_MESSAGE_DISPLAY_TIME_MS);
+                    
+                    // re-enable all buttons
+                    enableAllButtons();
+                    
+                    // Reset current XHR reference
+                    currentUploadXHR = null;
+
+                    fetchImageInfo();
+                };
+                
+                // Cancel event
+                xhr.onabort = function() {
+                    fetchImageInfo();
+                };
+                
+                // Start uploading with xhr.send
+                xhr.send(formData);
             });
 
-            // Fetch from URL for private images
+            // Upload Button: fetch from URL for private images
             document.getElementById("fetchButton").addEventListener("click", function() {
                 const url = document.getElementById("urlInput").value;
-                const registryAuth = document.getElementById("registryAuth").value;
+                let formData = new FormData();
+                // const registryAuth = document.getElementById("registryAuth").value; // Temporarily commented out
                 
                 if (!url) {
                     alert("Please enter a URL");
                     return;
                 }
-                // Attention: API is not ready yet
-                alert("fetch image from url");
-                return;
-                api.post(`/me/fetch-image`, {
-                    url: url,
-                    registry_auth: registryAuth
-                })
-                .then(data => {
-                    var uploadResult = document.getElementById("uploadResult");
-                    uploadResult.classList.remove("is-hidden");
-                    uploadResult.classList.add(data.error ? "is-danger" : "is-success");
-                    uploadResult.textContent = data.message || data.error;
-                    // Refresh image list after upload
+                console.log("Fetching image from URL:", url);
+                formData.append("image", url);
+                
+                // Hide previous result notification
+                const uploadResult = document.getElementById("uploadResult");
+                uploadResult.classList.add("is-hidden");
+
+                // Setup center progress modal
+                const topProgressContainer = document.getElementById("topProgressContainer");
+                const topProgressBar = document.getElementById("topProgressBar");
+                const topProgressPercentage = document.getElementById("topProgressPercentage");
+                const topProgressStatus = document.getElementById("topProgressStatus");
+                const topProgressTitle = document.getElementById("topProgressTitle");
+                
+                // Configure and show progress modal
+                topProgressTitle.textContent = "Fetch progress";
+                topProgressBar.value = 0;
+                topProgressPercentage.textContent = "0%";
+                topProgressStatus.textContent = "Initializing fetch...";
+                topProgressContainer.classList.add("visible");
+                
+
+                disableAllButtons();
+                
+                // Create XHR for potential cancellation
+                const xhr = new XMLHttpRequest();
+                currentUploadXHR = xhr;
+                
+                // Initialize the API endpoint with xhr.open
+                xhr.open('POST', api.baseUrl + '/me/upload-link', true);
+                if (api.token) {
+                    xhr.setRequestHeader('Authorization', 'Bearer ' + api.token);
+                }
+                
+                // Initial status
+                topProgressStatus.textContent = `Fetching image from URL: ${url}`;
+                
+                // Upload progress event, although it will be very fast, we keep it for code consistency
+                xhr.upload.onprogress = function(e) {
+                    if (e.lengthComputable) {
+                        const percentComplete = Math.round((e.loaded / e.total) * 100);
+                        topProgressBar.value = percentComplete;
+                        topProgressPercentage.textContent = percentComplete + "%";
+                        topProgressStatus.textContent = `Sending request: ${percentComplete}%`;
+                    }
+                };
+                
+                // Upload Completed: upon the completion of the upload, hide the progress bar and re-enable all buttons
+                xhr.upload.onload = function() {
+                    // Hide progress bar when upload is complete (regardless of server processing result)
+                    topProgressContainer.classList.remove("visible");
+                    enableAllButtons();
+                    
+                    // Refresh the image list to show the status
                     fetchImageInfo();
-                })
-                .catch(error => {
-                    console.log("Error fetching image:", error);
-                    var uploadResult = document.getElementById("uploadResult");
-                    uploadResult.classList.remove("is-hidden");
+                };
+                
+                // Image Creation Completed: the entire request is completed thus processing the response
+                xhr.onload = function() {
+                    // Reset current XHR reference
+                    currentUploadXHR = null;
+                    
+                    // 500 represents building errors thus we ignore it
+                    if (xhr.status >= 400 && xhr.status < 600 && xhr.status !== 500) {
+                        try {
+                            const response = JSON.parse(xhr.responseText);
+                            uploadResult.classList.remove("is-hidden", "is-success");
+                            uploadResult.classList.add("is-danger");
+                            document.getElementById('uploadResultText').textContent = response.error || response.message || "Fetch failed with status: " + xhr.status;
+                            
+                            setTimeout(() => {
+                                uploadResult.classList.add("is-hidden");
+                            }, ERROR_MESSAGE_DISPLAY_TIME_MS);
+                        } catch (e) {
+                            uploadResult.classList.remove("is-hidden", "is-success");
+                            uploadResult.classList.add("is-danger");
+                            document.getElementById('uploadResultText').textContent = "Fetch failed with status: " + xhr.status;
+                            
+                            setTimeout(() => {
+                                uploadResult.classList.add("is-hidden");
+                            }, ERROR_MESSAGE_DISPLAY_TIME_MS);
+                        }
+                    } else if (xhr.status >= 200 && xhr.status < 300) {
+                        // For successful status codes, check for specific error messages
+                        try {
+                            const response = JSON.parse(xhr.responseText);
+                            if (response.error || (response.message && (response.message.includes("same digest") || response.message.includes("already exists")))) {
+                                // These are special cases that should be treated as upload errors
+                                uploadResult.classList.remove("is-hidden", "is-success");
+                                uploadResult.classList.add("is-danger");
+                                document.getElementById('uploadResultText').textContent = response.error || response.message;
+                                
+                                setTimeout(() => {
+                                    uploadResult.classList.add("is-hidden");
+                                }, ERROR_MESSAGE_DISPLAY_TIME_MS);
+                            } else {
+                                // Normal success - hide the upload result
+                                uploadResult.classList.add("is-hidden");
+                            }
+                        } catch (e) {
+                            // If can't parse the response, show error message
+                            uploadResult.classList.remove("is-hidden", "is-success");
+                            uploadResult.classList.add("is-danger");
+                            document.getElementById('uploadResultText').textContent = response.error || response.message || "Error processing server response: Invalid format";
+                            
+                            setTimeout(() => {
+                                uploadResult.classList.add("is-hidden");
+                            }, ERROR_MESSAGE_DISPLAY_TIME_MS);
+                        }
+                    } else {
+                        // For 500 status codes, hide the uploadResult
+                        uploadResult.classList.add("is-hidden");
+                    }
+                    
+                    // Refresh the image list to show the status (including build errors)
+                    fetchImageInfo();
+                };
+                
+                // Upload error
+                xhr.onerror = function() {
+                    topProgressContainer.classList.remove("visible");
+                    uploadResult.classList.remove("is-hidden", "is-success");
                     uploadResult.classList.add("is-danger");
-                    uploadResult.textContent = "Error fetching image.";
-                });
+                    document.getElementById('uploadResultText').textContent = "Network error during image fetch";
+                    
+                    setTimeout(() => {
+                        uploadResult.classList.add("is-hidden");
+                    }, ERROR_MESSAGE_DISPLAY_TIME_MS);
+                    
+                    // Re-enable all buttons
+                    enableAllButtons();
+                    
+                    // Reset current XHR reference
+                    currentUploadXHR = null;
+                    
+                    // Refresh the image list to show the status
+                    fetchImageInfo();
+                };
+                
+                // Cancel event
+                xhr.onabort = function() {
+                    fetchImageInfo();
+                };
+                
+                // Send the request with xhr.send
+                xhr.send(formData);
+            });
+
+            // Setup event listener for uploadResult close button
+            document.querySelector('#uploadResult .simple-close-btn').addEventListener('click', function() {
+                document.getElementById('uploadResult').classList.add('is-hidden');
             });
         });
         
+        // Tools: format file size in a human-readable format
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        // Tools: filter the table based on the query
         function filterTable(tableBodyId, query) {
             const tableBody = document.getElementById(tableBodyId);
             const rows = tableBody.getElementsByTagName('tr');
-            const lowerQuery = query.toLowerCase();
+            const lowerQuery = query.toLowerCase(); // currently we perform case-insensitive matching
             
             for (let i = 0; i < rows.length; i++) {
                 const rowText = rows[i].textContent.toLowerCase();
@@ -327,6 +1055,22 @@
             }
         }
 
+        // Helper function to escape HTML and make text safe for display
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        // 3 important variables for image status tracking
+        let autoRefreshInterval = null; // for tracking refresh interval
+        let imageStatusMap = {}; // for tracking image status, every image will be tracked
+        
+        // Image Table Builder: fetch image info from the server
         function fetchImageInfo() {
             api.get(`/me/images`)
                 .then(data => {
@@ -336,45 +1080,161 @@
                     publicTableBody.innerHTML = ''; // Clear existing data
                     privateTableBody.innerHTML = ''; // Clear existing data
 
-                    // Traverse all repositories dynamically
+                    // Check if there are any processing images
+                    let hasProcessingImages = false;
+                    
+                    // Get current time for completion badge logic
+                    const currentTime = Date.now();
+                    
+                    // Traverse all items and build the table
                     for (const image of data.images) {
                         const isPublic = image.registry_host.includes('public') || image.registry_host.includes('10.100.100.1:5000');
                         const tableBody = isPublic ? publicTableBody : privateTableBody;
                         
-                        const row = document.createElement('tr');
-                        const size = formatSize(image.size);
+                        // Generate the unique ID for the image
+                        const imageId = `${image.registry_host}/${image.name}:${image.tag}`;
                         
+                        // Parse error log if status is FAILED
+                        let errorLog = '';
+                        const isFailed = image.status && image.status.startsWith('FAILED');
+                        if (isFailed) {
+                            const colonIndex = image.status.indexOf(':');
+                            if (colonIndex !== -1) {
+                                errorLog = image.status.substring(colonIndex + 2);
+                                // Set the clean status without the error log
+                                image.cleanStatus = 'FAILED';
+                            } else {
+                                image.cleanStatus = 'FAILED';
+                            }
+                        } else {
+                            image.cleanStatus = image.status;
+                        }
+                        
+                        // Check the image status
+                        if (image.cleanStatus === 'PROCESSING') {
+                            hasProcessingImages = true;
+                            // Record the processing image
+                            imageStatusMap[imageId] = 'PROCESSING';
+                        } else if (image.cleanStatus === 'DONE') {
+                            // For DONE images, check if inserted_at is recent enough to display "completed" badge
+                            const insertedTime = new Date(image.inserted_at).getTime();
+                            const timeElapsed = currentTime - insertedTime;
+                            if (timeElapsed < COMPLETION_DISPLAY_TIME_MS) {
+                                image.justCompleted = true;
+                            }
+                            imageStatusMap[imageId] = 'DONE';
+                        } else {
+                            imageStatusMap[imageId] = image.cleanStatus;
+                        }
+                        
+                        const row = document.createElement('tr');
+                        row.setAttribute('data-image-id', imageId);
+                        let size = image.size;
+                        if (size != null) {
+                            size = size + "GB";
+                        } else {
+                            size = "Not available";
+                        }
+                        
+                        // Process the status display
+                        let statusDisplay = '';
+                        if (image.cleanStatus === 'PROCESSING') {
+                            statusDisplay = '<span class="processing-status"><i class="fas fa-spinner fa-spin"></i>processing</span>';
+                        } else if (image.cleanStatus === 'FAILED') {
+                            statusDisplay = '<span class="failed-status"><i class="fas fa-exclamation-triangle"></i>failed</span>';
+                        } else if (image.justCompleted) {
+                            statusDisplay = '<span class="just-completed-badge"><i class="fas fa-check"></i>completed</span>';
+                        }
+                        
+                        // For PROCESSING images, disable the action buttons and add a style for processing rows
+                        const isProcessing = image.cleanStatus === 'PROCESSING';
+                        const actionButtonsDisabled = isProcessing ? 'disabled style="pointer-events: none; opacity: 0.5; cursor: not-allowed;"' : '';
+                        if (isProcessing) {
+                            row.classList.add('processing-row');
+                        }
+                        // Add failed-row class to highlight failed images
+                        if (isFailed) {
+                            row.classList.add('failed-row');
+                        }
+
+                        // Define action buttons based on image status
+                        let actionButtonsHTML = '';
+                        let imageInfo = image;
+                        if (isFailed) {
+                            // For failed images, only show Failure Log and Delete buttons
+                            actionButtonsHTML = `
+                                <div class="action-buttons">
+                                    <a href="#" class="failure-log-button" data-error-log="${encodeURIComponent(errorLog)}"><i class="fas fa-exclamation-circle"></i> Failure Log</a>
+                                    <a href="#" class="delete-button" data-repository="${image.registry_host}" data-image="${image.name}" data-tag="${image.tag}" data-digest="${image.digest}" ${actionButtonsDisabled}><i class="fas fa-trash"></i> Delete</a>
+                                </div>
+                            `;
+                            // delete status, otherwise the format in error-log will cause error when passing imageInfo to showDetails
+                            delete imageInfo.status;
+                        } else {
+                            // For normal images, show Create from and Delete buttons
+                            actionButtonsHTML = `
+                                <div class="action-buttons">
+                                    <a href="#" class="create-from-label" data-repository="${image.registry_host}" data-image="${image.name}" data-tag="${image.tag}" data-details='${encodeURIComponent(JSON.stringify(image))}' ${actionButtonsDisabled}><i class="fas fa-square-plus"></i>Create from</a>
+                                    <a href="#" class="delete-button" data-repository="${image.registry_host}" data-image="${image.name}" data-tag="${image.tag}" data-digest="${image.digest}" ${actionButtonsDisabled}><i class="fas fa-trash"></i> Delete</a>
+                                </div>
+                            `;
+                        }
+
                         if (isPublic) {
                             row.innerHTML = `
-                                <td>${image.registry_host}</td>
-                                <td>${image.name}</td>
+                                <td>${image.name} ${statusDisplay}</td>
                                 <td>${image.tag}</td>
                                 <td>${size}</td>
-                                <td>${new Date(image.created_at || image.inserted_at).toLocaleString()}</td>
-                                <td><a href="#" class="view-button" onclick="showDetails('${encodeURIComponent(JSON.stringify(image))}')"><i class="fas fa-circle-info"></i> View</a></td>
-                                <td><a href="#" class="create-from-label" data-repository="${image.registry_host}" data-image="${image.name}" data-tag="${image.tag}" data-details='${encodeURIComponent(JSON.stringify(image))}'><i class="fas fa-square-plus"></i>Create from</a></td>
-                                <td><span class="label-badge"><i class="fas fa-tag mr-1"></i>Models</span></td>
+                                <td>${new Date(image.inserted_at).toLocaleString()}</td>
+                                <td><a href="#" class="view-button" onclick="showDetails('${encodeURIComponent(JSON.stringify(imageInfo))}')"><i class="fas fa-circle-info"></i> View</a></td>
+                                <td>${actionButtonsHTML}</td>
                             `;
                         } else {
-                            // Determine source (Tar file, Google Cloud, etc.)
-                            const source = determineSource(image);
                             row.innerHTML = `
-                                <td>${source}</td>
-                                <td>${image.name}</td>
+                                <td>${image.name} ${statusDisplay}</td>
                                 <td>${image.tag}</td>
                                 <td>${size}</td>
-                                <td>${new Date(image.created_at || image.inserted_at).toLocaleString()}</td>
-                                <td><a href="#" class="view-button" onclick="showDetails('${encodeURIComponent(JSON.stringify(image))}')"><i class="fas fa-circle-info"></i> View</a></td>
-                                <td><a href="#" class="create-from-label" data-repository="${image.registry_host}" data-image="${image.name}" data-tag="${image.tag}" data-details='${encodeURIComponent(JSON.stringify(image))}'><i class="fas fa-square-plus"></i>Create from</a></td>
-                                <td><span class="label-badge"><i class="fas fa-tag mr-1"></i>Models</span></td>
+                                <td>${new Date(image.inserted_at).toLocaleString()}</td>
+                                <td><a href="#" class="view-button" onclick="showDetails('${encodeURIComponent(JSON.stringify(imageInfo))}')"><i class="fas fa-circle-info"></i> View</a></td>
+                                <td>${actionButtonsHTML}</td>
                             `;
                         }
                         tableBody.appendChild(row);
                     }
                     
+                    // Auto Refresh: refresh image status if there are processing images
+                    if (hasProcessingImages) {
+                        if (!autoRefreshInterval) {
+                            autoRefreshInterval = setInterval(fetchImageInfo, 2000); // refresh every 2 seconds
+                        }
+                    } else {
+                        // Check if there are recent completions to keep refreshing
+                        let hasRecentCompletions = false;
+                        for (const image of data.images) {
+                            if (image.cleanStatus === 'DONE' && image.justCompleted) {
+                                hasRecentCompletions = true;
+                                break;
+                            }
+                        }
+                        
+                        if (!hasRecentCompletions && autoRefreshInterval) {
+                            clearInterval(autoRefreshInterval);
+                            autoRefreshInterval = null;
+                        } else if (hasRecentCompletions && !autoRefreshInterval) {
+                            // If there are recent completions but no auto refresh interval, create a new one
+                            autoRefreshInterval = setInterval(fetchImageInfo, 2000); // refresh every 2 seconds to keep the badge display accurate
+                        }
+                    }
+                    
                     // "Create from" buttons
                     document.querySelectorAll('.create-from-label').forEach(label => {
                         label.addEventListener('click', function(e) {
+                            // If the button is disabled, do not execute any operation
+                            if (this.hasAttribute('disabled') || this.style.pointerEvents === 'none') {
+                                e.preventDefault();
+                                return;
+                            }
+                            
                             // Get data attributes
                             const repository = this.getAttribute('data-repository');
                             const imageName = this.getAttribute('data-image');
@@ -384,56 +1244,116 @@
                             if (encodedDetails) {
                                 const tagData = JSON.parse(decodeURIComponent(encodedDetails));
                                 // Add default_entrypoint and default_ports to URL if available
-                                let url = `launch-new.html?repository=${encodeURIComponent(repository)}&image=${encodeURIComponent(imageName)}&tag=${encodeURIComponent(tag)}`;
+                                let url = `launch-multi.html?repository=${encodeURIComponent(repository)}&image=${encodeURIComponent(imageName)}&tag=${encodeURIComponent(tag)}`;
                                 if (tagData.default_entrypoint) {
                                     url += `&entrypoint=${encodeURIComponent(tagData.default_entrypoint)}`;
                                 }
                                 if (tagData.default_port) {
                                     url += `&ports=${encodeURIComponent(tagData.default_port)}`;
                                 }
-                                // Navigate to the launch-new page
+                                // Navigate to the launch-multi page
                                 window.location.href = url;
                             } else {
                                 // Fallback to basic URL if data not found
-                                const url = `launch-new.html?repository=${encodeURIComponent(repository)}&image=${encodeURIComponent(imageName)}&tag=${encodeURIComponent(tag)}`;
+                                const url = `launch-multi.html?repository=${encodeURIComponent(repository)}&image=${encodeURIComponent(imageName)}&tag=${encodeURIComponent(tag)}`;
                                 window.location.href = url;
                             }
                             // Prevent the default behavior
                             e.preventDefault();
                         });
                     });
+                    
+                    // Failure log buttons
+                    document.querySelectorAll('.failure-log-button').forEach(button => {
+                        button.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            
+                            // Get the error log from data attribute
+                            const errorLog = decodeURIComponent(this.getAttribute('data-error-log') || '');
+                            showFailureLog(errorLog);
+                        });
+                    });
+                    
+                    // Delete image buttons
+                    document.querySelectorAll('.delete-button').forEach(button => {
+                        button.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            
+                            // If the button is disabled, do not execute any operation
+                            if (this.hasAttribute('disabled') || this.style.pointerEvents === 'none') {
+                                return;
+                            }
+                            
+                            const repository = this.getAttribute('data-repository');
+                            const imageName = this.getAttribute('data-image');
+                            const tag = this.getAttribute('data-tag');
+                            const digest = this.getAttribute('data-digest');
+                            
+                            if (confirm(`Are you sure you want to delete the image ${imageName}:${tag}?`)) {
+                                deleteImage(repository, imageName, tag, digest);
+                            }
+                        });
+                    });
                 })
                 .catch(error => console.error('Error fetching image data:', error));
         }
         
-        function determineSource(tagData) {
-            // Attention: field in API is not ready yet
-            return "Local Upload";
+        function deleteImage(registry_host, name, tag, digest) {
+            console.log("Deleting image:", registry_host, name, tag, digest);
+            let resultNotificationId;
+            if (registry_host.includes('10.100.100.1:5000')) {
+                resultNotificationId = "deleteResultInPublic";
+            } else {
+                resultNotificationId = "deleteResultInPrivate";
+            }
+            // const resultNotification = document.getElementById(resultNotificationId);
+            // resultNotification.classList.remove("is-hidden", "is-danger", "is-success");
+            // resultNotification.classList.add("is-info");
+            // resultNotification.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Deleting image...';
+            
+            // disableAllButtons();
+            
+            api.post('/me/delete-image', {
+                digest: digest,
+                registry_host: registry_host,
+                name: name,
+                tag: tag
+            })
+            .then(response => {
+                // display success message
+                const resultNotification = document.getElementById(resultNotificationId);
+                resultNotification.classList.remove("is-hidden", "is-danger");
+                resultNotification.classList.add("is-success");
+                resultNotification.textContent = "Image successfully deleted";
+                
+                // Re-enable all buttons
+                // enableAllButtons();
+                
+                // Auto-hide the notification after 5 seconds
+                setTimeout(() => {
+                    resultNotification.classList.add("is-hidden");
+                }, DELETE_IMAGE_MESSAGE_DISPLAY_TIME_MS);
+                
+                // Refresh the image list
+                fetchImageInfo();
+            })
+            .catch(error => {
+                console.error('Error deleting image:', error);
+                const resultNotification = document.getElementById(resultNotificationId);
+                resultNotification.classList.remove("is-hidden", "is-success", "is-info");
+                resultNotification.classList.add("is-danger");
+                resultNotification.textContent = error.response?.data?.error || "Error deleting image";
+                
+                enableAllButtons();
+                
+                setTimeout(() => {
+                    resultNotification.classList.add("is-hidden");
+                }, DELETE_IMAGE_MESSAGE_DISPLAY_TIME_MS);
+            });
         }
         
-        function formatSize(sizeInBytes) {
-            if (!sizeInBytes) return "Unknown";
-            
-            const units = ['B', 'KB', 'MB', 'GB', 'TB'];
-            let size = sizeInBytes;
-            let unitIndex = 0;
-            
-            while (size >= 1024 && unitIndex < units.length - 1) {
-                size /= 1024;
-                unitIndex++;
-            }
-            
-            return `${size.toFixed(2)} ${units[unitIndex]}`;
-        }
-
         function showDetails(details) {
-            details = JSON.parse(decodeURIComponent(details)); // Parse the JSON string
-
-            // Create label items
-            // const labelItems = details.labels ? 
-            //     Object.entries(details.labels).map(
-            //         ([key, value]) => `<li><strong>${key}:</strong> ${value}</li>`
-            //     ).join('') : '<li>No labels available</li>';
+            details = JSON.parse(decodeURIComponent(details)); // parse the JSON string
             
             // show default port if available
             const portsDisplay = details.default_port ? 
@@ -518,6 +1438,45 @@
         function closeModal() {
             const modal = document.querySelector('.modal.is-active');
             if (modal) modal.remove();
+        }
+
+        // Function to display failure log in a modal
+        function showFailureLog(errorLog) {
+            // Decode the error log if it appears to be URL encoded
+            let decodedErrorLog = errorLog;
+            try {
+                // Try to decode in case it's URL encoded
+                if (errorLog.indexOf('%') !== -1) {
+                    decodedErrorLog = decodeURIComponent(errorLog);
+                }
+            } catch (e) {
+                console.error('Error decoding error log:', e);
+            }
+            
+            const errorContent = escapeHtml(decodedErrorLog) || 'No error log available';
+            
+            const logModal = document.createElement('div');
+            logModal.classList.add('modal', 'is-active');
+            logModal.innerHTML = `
+                <div class="modal-background" onclick="closeModal()"></div>
+                <div class="modal-content">
+                    <div class="box">
+                        <h4 class="title is-5"><i class="fas fa-exclamation-triangle mr-2"></i>Failure Log</h4>
+                        <div class="field">
+                            <div class="control">
+                                <pre class="failure-log-content">${errorContent}</pre>
+                            </div>
+                        </div>
+                        <div class="field is-grouped is-grouped-right">
+                            <div class="control">
+                                <button class="button" onclick="closeModal()"><i class="fas fa-times mr-2"></i>Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <button class="modal-close is-large" aria-label="close" onclick="closeModal()"></button>
+            `;
+            document.body.appendChild(logModal);
         }
     </script>
 </body>

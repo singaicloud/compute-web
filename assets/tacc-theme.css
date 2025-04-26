@@ -762,6 +762,8 @@ a:hover {
   color: #212121e0;
   border: 1px solid #eaeaea;
   background-color: #fcfcfc;
+  min-width: 80px;
+  justify-content: center;
 }
 
 .job-action-debug-button {
@@ -867,7 +869,10 @@ a:hover {
 /* Adjust container table for small screens */
 @media screen and (max-width: 992px) {
   .action-item {
-    min-width: 30px;
+    min-width: 32px;
+    padding: 0.3rem;
+    justify-content: center;
+    margin: 0 2px 2px 0;
   }
   
   .action-item span {
@@ -875,12 +880,13 @@ a:hover {
   }
   
   .action-item i {
+    margin-right: 0;
     margin-bottom: 0;
     font-size: 16px;
   }
 
-  .container-table .actions {
-    gap: 2.5px;
+  .actions {
+    gap: 4px;
   }
 }
 
@@ -944,7 +950,7 @@ a:hover {
 
 .container-header-id,
 .container-item-id {
-  width: 30%;
+  width: 25%;
   justify-content: flex-start;
   text-align: left;
   padding-left: 15px;
@@ -952,26 +958,18 @@ a:hover {
 
 .container-header-name,
 .container-item-name {
-  width: 30%;
+  width: 25%;
   justify-content: flex-start;
   text-align: left;
   padding-left: 15px;
 }
 
-.container-header-gpu {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  width: 15%;
-  text-align: left;
-  padding-left: 15px;
-}
-
+.container-header-gpu,
 .container-item-gpu {
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  width: 15%;
+  width: 20%;
   text-align: left;
   padding-left: 15px;
 }
@@ -980,7 +978,7 @@ a:hover {
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  width: 25%;
+  width: 30%;
   text-align: left;
   padding-left: 22px;
   min-height: 24px;
@@ -990,7 +988,7 @@ a:hover {
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  width: 25%;
+  width: 30%;
   text-align: left;
   padding-left: 15px;
 }
@@ -1034,7 +1032,7 @@ a:hover {
   
   .container-header-name,
   .container-item-name {
-    width: 30%;
+    width: 25%;
   }
   
   .container-header-gpu,
@@ -1046,7 +1044,7 @@ a:hover {
   
   .container-header-actions,
   .container-item-actions {
-    width: 30%;
+    width: 35%;
     justify-content: flex-start;
     padding-left: 15px;
   }

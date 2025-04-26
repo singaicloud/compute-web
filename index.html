@@ -28,7 +28,7 @@
     <section class="section launchpad">
         <div class="container">
             <div class="options">
-                <div class="option" onclick="window.location.href='/launch-new.html'">
+                <div class="option" onclick="window.location.href='/launch-multi.html'">
                     <div class="image"><i class="fa-solid fa-list-check"></i></div>
                     <div class="text">
                         <div class="line1">Quick Launch</div>
@@ -63,7 +63,7 @@
                 // Get namespace for extracting pods data
                 api.get('/me').then(response => {
                     namespace = response.username;
-                    console.log('Namespace fetched:', namespace);
+                    // console.log('Namespace fetched:', namespace);
                 });
                 // Get jobs
                 api.get('/me/jobs').then(response => {
@@ -76,26 +76,26 @@
                             pod_ids: job.pods,
                             pods: []
                         }));
-                        console.log('Jobs fetched:', jobs);
+                        // console.log('Jobs fetched:', jobs);
 
                         // Get pods data
                         return api.get('/me/pods')
                             .then(podsResponse => {
                                 pods = podsResponse[namespace];
-                                console.log('Pods fetched:', pods);
+                                // console.log('Pods fetched:', pods);
                             });
                 })
                 .then(() => {
                         // Create a map of pod IDs to pod data for faster lookup
                         const podMap = new Map();
                         pods.forEach(pod => {
-                            podMap.set(pod["Container Name"], pod);
+                            podMap.set(pod["Job Name"] + "-" + pod["Container Name"], pod);
                         });
 
                         // Match detailed pod data to their jobs using the map
                         jobs.forEach(job => {
                             job.pods = job.pod_ids.map((podId, index) => {
-                                const pod = podMap.get(podId);
+                                const pod = podMap.get(job.job_name + "-" + podId);
                                 if (pod) {
                                     return pod;
                                 }
@@ -178,26 +178,20 @@
                                     <span class="job-name">${jobName}</span>
                                 </div>
                                 <div class="job-actions">
-                                    <div class="job-action-debug-button danger" onclick="event.stopPropagation(); deleteJob('${jobName}', '${namespace}', '${jobContainerId}')">
-                                        <!-- <i class="fa-regular fa-trash-alt"></i>
-                                            <span>Delete</span> -->
-                                    </div>
                                     <div class="job-action-button info" onclick="event.stopPropagation(); showSetupInfo('${jobName}')">
                                         <i class="fa-solid fa-info-circle"></i>
                                         <span>Info</span>
                                     </div>
-                                    ${status == 'Running' || status == 'Completed' ? `
-                                        <div class="job-action-button copy" onclick="event.stopPropagation(); cloneJob('${jobName}')">
-                                            <i class="fa-solid fa-clone"></i>
-                                            <span>Clone</span>
-                                        </div>
-                                    ` : ''}
-                                    ${status === 'Running' ? `
+                                    <!-- ${status === 'Running' ? `
                                         <div class="job-action-button stop" onclick="event.stopPropagation(); stopJob('${jobName}', '${namespace}', '${jobContainerId}')">
                                             <i class="fa-solid fa-stop"></i>
                                             <span>Stop</span>
                                         </div>
-                                    ` : ''}
+                                    ` : ''} -->
+                                    <div class="job-action-button danger" onclick="event.stopPropagation(); deleteJob('${jobName}', '${namespace}', '${jobContainerId}')">
+                                        <i class="fa-solid fa-trash"></i>
+                                        <span>Delete</span>
+                                    </div>
                                 </div>
                             </div>
                             <div class="job-meta">
@@ -247,28 +241,40 @@
                                             <div class="container-item-actions">
                                                 <div class="actions-container">
                                                     <div class="actions">
-                                                        ${container["Status"] === 'Completed' ? `
+                                                        ${containerStatusClass === 'status-completed' ? `
                                                             <div class="action-item" onclick="showContainerLog('${container["Namespace"]}', '${container["Container Name"]}')">
                                                                 <i class="fa-regular fa-file"></i>
                                                                 <span>Output</span>
                                                             </div>
                                                         ` : ''}
-                                                        ${container["Status"] === 'Running' ? `
+                                                        ${containerStatusClass === 'status-failed' && container["Error Message"] && container["Error Message"] !== 'N/A' ? `
+                                                            <div class="action-item" onclick="showErrorMessage('${container["Error Message"].replace(/'/g, "\\'")}')">
+                                                                <i class="fa-regular fa-file"></i>
+                                                                <span>Error log</span>
+                                                            </div>
+                                                        ` : ''}
+                                                        ${containerStatusClass === 'status-running' ? `
                                                         <div class="action-item" onclick="editContainer('${container["Pod IP"]}', '${container["Container Name"]}', '${container["Status"]}')">
                                                             <i class="pencil-icon"></i>
                                                                 <span>Port</span>
                                                             </div>
                                                         ` : ''}
-                                                        ${container["Status"] === 'Running' ? `
+                                                        ${containerStatusClass === 'status-running' ? `
                                                             <div class="action-item" onclick="showSshCommand('${container["SSH Port"]}')">
                                                                 <i class="link-icon"></i>
                                                                 <span>SSH</span>
                                                             </div>
                                                         ` : ''}
-                                                        ${container["Status"] === 'Running' ? `
+                                                        ${containerStatusClass === 'status-running' ? `
                                                             <div class="action-item" onclick="connectSsh('${container["SSH Port"]}')">
                                                                 <i class="terminal-icon"></i>
                                                                 <span>Terminal</span>
+                                                            </div>
+                                                        ` : ''}
+                                                        ${containerStatusClass === 'status-running' ? `
+                                                            <div class="action-item" onclick="event.stopPropagation(); cloneJob('${jobName}', '${jobContainerId}')">
+                                                                <i class="fa-regular fa-clone"></i>
+                                                                <span>Clone</span>
                                                             </div>
                                                         ` : ''}
                                                     </div>
@@ -327,6 +333,11 @@
                     .catch(error => {
                         console.error('Error fetching log:', error);
                     });
+            };
+            
+            // show error message
+            window.showErrorMessage = function(errorMessage) {
+                showModal(errorMessage);
             };
                     
             // show ssh command
@@ -402,10 +413,131 @@
             };
                     
             // clone action
-            window.cloneJob = function(jobName) {
-                alert(`Cloning job ${jobName}`);
-                // attention: not implemented yet, will update after the create-job API is ready
+            window.cloneJob = function(jobName, containersId) {
+                const containers = window.jobContainers[containersId];
+                if (!containers || containers.length === 0) {
+                    alert('No containers found for this job.');
+                    return;
+                }
+                
+                // Get the first container (as specified in the requirements)
+                const container = containers[0];
+                
+                if (container["Status"] !== 'Running') {
+                    alert('Cannot commit container that is not running. Container must be in Running state.');
+                    return;
+                }
+                
+                // Show the commit modal
+                showCommitModal(container);
             };
+                    
+            function showCommitModal(container) {
+                let modal = document.getElementById('commit-modal');
+                if (!modal) {
+                    modal = document.createElement('div');
+                    modal.id = 'commit-modal';
+                    modal.className = 'modal';
+                    modal.innerHTML = `
+                        <div class="modal-background"></div>
+                        <div class="modal-content">
+                            <div class="box">
+                                <h3 class="title is-5">Create Image from Container</h3>
+                                <div class="field">
+                                    <label class="label">Container</label>
+                                    <div class="control">
+                                        <input id="commit-container-name" class="input" type="text" readonly>
+                                    </div>
+                                </div>
+                                <div class="field">
+                                    <label class="label">Image Name <span class="has-text-danger">*</span></label>
+                                    <div class="control">
+                                        <input id="commit-image-name" class="input" type="text" placeholder="Enter new image name" required>
+                                    </div>
+                                    <p class="help">Provide a name for your new image</p>
+                                </div>
+                                <div class="field">
+                                    <label class="label">Image Tag</label>
+                                    <div class="control">
+                                        <input id="commit-image-tag" class="input" type="text" placeholder="latest" value="latest">
+                                    </div>
+                                    <p class="help">Optional: Provide a tag for your image (defaults to 'latest')</p>
+                                </div>
+                                <div class="field">
+                                    <label class="label">Description</label>
+                                    <div class="control">
+                                        <textarea id="commit-description" class="textarea" placeholder="Enter description for your image"></textarea>
+                                    </div>
+                                </div>
+                                <div class="field is-grouped">
+                                    <div class="control">
+                                        <button id="commit-save-button" class="button is-link">Create Image</button>
+                                    </div>
+                                    <div class="control">
+                                        <button id="commit-cancel-button" class="button is-light">Cancel</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <button class="modal-close is-large" aria-label="close"></button>
+                    `;
+                    document.body.appendChild(modal);
+                    
+                    // Add event listeners
+                    modal.querySelector('.modal-close').addEventListener('click', () => {
+                        modal.classList.remove('is-active');
+                    });
+                    modal.querySelector('.modal-background').addEventListener('click', () => {
+                        modal.classList.remove('is-active');
+                    });
+                    document.getElementById('commit-cancel-button').addEventListener('click', () => {
+                        modal.classList.remove('is-active');
+                    });
+                }
+                
+                // Set container name in the modal
+                document.getElementById('commit-container-name').value = container["Container Name"];
+                
+                // Clear previous inputs
+                document.getElementById('commit-image-name').value = '';
+                document.getElementById('commit-image-tag').value = 'latest';
+                document.getElementById('commit-description').value = '';
+                
+                // Set up the save button click handler
+                const saveButton = document.getElementById('commit-save-button');
+                saveButton.onclick = function() {
+                    const imageName = document.getElementById('commit-image-name').value.trim();
+                    const imageTag = document.getElementById('commit-image-tag').value.trim() || 'latest';
+                    const description = document.getElementById('commit-description').value.trim();
+                    const podName = container["Container Name"];
+                    
+                    if (!imageName) {
+                        alert('Image name is required');
+                        return;
+                    }
+                    
+                    // Close the modal immediately
+                    modal.classList.remove('is-active');
+                    
+                    // Call the API to commit the container
+                    api.post('/me/commit-container', {
+                        pod_name: podName,
+                        image_name: imageName,
+                        image_tag: imageTag,
+                        description: description
+                    })
+                    .then(response => {
+                        alert(`Image ${imageName}:${imageTag} created successfully. Please go to the Image page to view the image.`);
+                    })
+                    .catch(error => {
+                        console.error('Error committing container:', error);
+                        alert(`Error creating image: ${error.message || 'Unknown error'}`);
+                    });
+                };
+                
+                // Show the modal
+                modal.classList.add('is-active');
+            }
                     
             // delete action
             window.deleteJob = function(jobName, namespace, containersId) {
@@ -684,7 +816,7 @@
                 status = status.toLowerCase();
                 if (status === 'running') return 'status-running';
                 if (status === 'pending' || status === 'containercreating' || status === 'podinitialized') return 'status-pending';
-                if (status === 'failed' || status === 'error' || status === 'crashloopbackoff') return 'status-failed';
+                if (status === 'failed' || status === 'error' || status === 'crashloopbackoff' || status === 'unschedulable') return 'status-failed';
                 if (status === 'completed' || status === 'succeeded') return 'status-completed';
                 return 'status-unknown';
             }
