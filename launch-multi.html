@@ -657,6 +657,7 @@
                     
                     let totalAvailableGPUs = 0;
                     let maxGpusPerNode = 0;
+                    let minGpusPerNode = Infinity;
                     let firstSelectedGpuType = '';
                     
                     if(window.gpuInfo) {
@@ -665,8 +666,13 @@
                             if (selectedTypes.includes(node.gpu_sku)) {
                                 const nodeAvailableGPUs = Math.max(0, (node.total || 0) - (node.used || 0));
                                 maxGpusPerNode = Math.max(maxGpusPerNode, nodeAvailableGPUs);
+                                minGpusPerNode = Math.min(minGpusPerNode, nodeAvailableGPUs);
                             }
                         }
+                    }
+
+                    if (minGpusPerNode === Infinity) {
+                        minGpusPerNode = 0;
                     }
 
                     selectedButtons.forEach((button, index) => {
@@ -727,15 +733,14 @@
                         // Calculate total GPUs needed for this option
                         const requiredGPUs = option.gpus * option.nodes;
                         
-                        // If required GPUs exceed available, disable button
                         if (requiredGPUs > totalAvailableGPUs) {
                             button.disabled = true;
                             button.classList.add('is-light');
                             button.title = `Requires ${requiredGPUs} total GPUs, but only ${totalAvailableGPUs} are available across selected types.`;
-                        } else if (option.gpus > maxGpusPerNode) {
+                        } else if (option.gpus > minGpusPerNode) {
                             button.disabled = true;
                             button.classList.add('is-light');
-                            button.title = `Requires ${option.gpus} GPUs per node, but the maximum available on a single node for selected types is ${maxGpusPerNode}.`;
+                            button.title = `Requires ${option.gpus} GPUs per node, but the minimum available on a node for selected types is ${minGpusPerNode}.`;
                         } else {
                             hasEnabledOption = true;
                             button.addEventListener('click', function() {
@@ -933,8 +938,8 @@
                         job_name: document.querySelector('input[name="job_name"]').value || 'job',
                         master_image: document.querySelector('select[name="master_image"]').value,
                         node_replicas: parseInt(document.getElementById('node-replicas-input').value) || 1,
-                        cpu_limit: 1,
-                        memory_limit: '2Gi',
+                        cpu_limit: 2,
+                        memory_limit: '10Gi',
                         gpu_limit: parseInt(document.getElementById('gpu-limit-input').value) || 0,
                         commandArray: commandValue ? commandValue.split(/\s+/).map(arg => arg.trim()) : [],
                         env_vars: [],
