@@ -616,11 +616,6 @@
                                     });
                                     gpuContainer.appendChild(gpuButton);
                                 });
-                                
-                                // Select first available GPU by default
-                                if (gpuContainer.firstChild) {
-                                    gpuContainer.firstChild.click();
-                                }
                             }
                         })
                         .catch(error => {
@@ -636,24 +631,44 @@
                     
                     document.getElementById('gpu-type-input').value = JSON.stringify(selectedTypes);
                     document.getElementById('gpu-name-input').value = selectedNames.join(', ');
+                    
+                    const gpuNodeSection = document.getElementById('gpu-node-section');
+                    if (selectedButtons.length > 0) {
+                        gpuNodeSection.style.display = 'block';
+                    } else {
+                        gpuNodeSection.style.display = 'none';
+                    }
                 }
                 
                 // Function to setup GPU-node options based on selected GPU types
                 function setupGpuNodeOptionsForMulti() {
                     const selectedButtons = document.querySelectorAll('.gpu-option.is-selected');
+                    const selectedTypes = Array.from(selectedButtons).map(button => button.dataset.type);
                     
                     if (selectedButtons.length === 0) {
-                        // No GPUs selected, clear node options
                         const container = document.getElementById('gpu-node-options');
                         container.innerHTML = '';
                         document.getElementById('resource-allocation-preview').style.display = 'none';
+                        document.getElementById('gpu-node-section').style.display = 'none';
                         return;
                     }
                     
-                    // Calculate total available GPUs from all selected types
+                    document.getElementById('gpu-node-section').style.display = 'block';
+                    
                     let totalAvailableGPUs = 0;
+                    let maxGpusPerNode = 0;
                     let firstSelectedGpuType = '';
                     
+                    if(window.gpuInfo) {
+                        for (const nodeKey in window.gpuInfo) {
+                            const node = window.gpuInfo[nodeKey];
+                            if (selectedTypes.includes(node.gpu_sku)) {
+                                const nodeAvailableGPUs = Math.max(0, (node.total || 0) - (node.used || 0));
+                                maxGpusPerNode = Math.max(maxGpusPerNode, nodeAvailableGPUs);
+                            }
+                        }
+                    }
+
                     selectedButtons.forEach((button, index) => {
                         const totalGPUs = parseInt(button.dataset.total) || 0;
                         const usedGPUs = parseInt(button.dataset.used) || 0;
@@ -716,7 +731,11 @@
                         if (requiredGPUs > totalAvailableGPUs) {
                             button.disabled = true;
                             button.classList.add('is-light');
-                            button.title = `Requires ${requiredGPUs} GPUs, but only ${totalAvailableGPUs} available`;
+                            button.title = `Requires ${requiredGPUs} total GPUs, but only ${totalAvailableGPUs} are available across selected types.`;
+                        } else if (option.gpus > maxGpusPerNode) {
+                            button.disabled = true;
+                            button.classList.add('is-light');
+                            button.title = `Requires ${option.gpus} GPUs per node, but the maximum available on a single node for selected types is ${maxGpusPerNode}.`;
                         } else {
                             hasEnabledOption = true;
                             button.addEventListener('click', function() {
@@ -735,7 +754,10 @@
                         container.appendChild(button);
                     });
                     
-                    // Auto-select first available option
+                    document.getElementById('resource-allocation-preview').style.display = 'none';
+                    document.getElementById('match-status-good').style.display = 'none';
+                    document.getElementById('match-status-poor').style.display = 'none';
+                    
                     if (hasEnabledOption) {
                         for (let i = 0; i < container.children.length; i++) {
                             const button = container.children[i];
@@ -744,23 +766,16 @@
                                 break;
                             }
                         }
-
-                        // Check whether the currently selected image and resource match
+                        
                         const selectedImage = document.querySelector('select[name="master_image"]').value;
-                        if(selectedImage){
+                        if (selectedImage) {
                             const selectedImageObj = window.imagesData.images.find(img => img.full_name === selectedImage);
-                            if(selectedImageObj){
-                                // Using variables in the current function
+                            if (selectedImageObj) {
                                 const firstEnabledOption = Array.from(container.children).find(btn => !btn.disabled);
                                 const gpuCount = firstEnabledOption ? parseInt(firstEnabledOption.dataset.gpus) || 1 : 1;
                                 updateResourceMatchingStatus(selectedImageObj, firstSelectedGpuType, gpuCount);
                             }
                         }
-                    } else {
-                        // Hide resource preview if no options available
-                        document.getElementById('resource-allocation-preview').style.display = 'none';
-                        document.getElementById('match-status-good').style.display = 'none';
-                        document.getElementById('match-status-poor').style.display = 'none';
                     }
                 }
                 
@@ -895,6 +910,18 @@
                 document.getElementById('submit').addEventListener('click', function(){
                     const commandValue = document.querySelector('input[name="command"]').value.trim();
                     
+                    const selectedGpuTypes = JSON.parse(document.getElementById('gpu-type-input').value || '[]');
+                    if (!selectedGpuTypes.length) {
+                        showResultModal('Warning', 'Please select at least one GPU type', 'is-warning');
+                        return;
+                    }
+                    
+                    const selectedNodeOption = document.querySelector('.gpu-node-option.is-selected');
+                    if (!selectedNodeOption) {
+                        showResultModal('Warning', 'Please select GPU node configuration', 'is-warning');
+                        return;
+                    }
+                    
                     const useSSH = true;
                     const portsInput = document.querySelector('.exposed-port').value.trim();
                     const exposedPorts = portsInput ? 
@@ -912,7 +939,7 @@
                         commandArray: commandValue ? commandValue.split(/\s+/).map(arg => arg.trim()) : [],
                         env_vars: [],
                         use_ssh: useSSH,
-                        gpu_type: JSON.parse(document.getElementById('gpu-type-input').value || '[]'),
+                        gpu_type: selectedGpuTypes,
                         exposed_ports: exposedPorts
                     };
                     
@@ -1152,7 +1179,7 @@
             <div class="form-section">
                 <h3 class="section-title">GPU Configuration</h3>
                 <div class="field">
-                    <label class="label">GPU Type</label>
+                    <label class="label">Available GPU Types for Selection</label>
                     <div class="control">
                         <div id="gpu-options-container" class="buttons gpu-buttons-container"></div>
                         <input type="hidden" id="gpu-type-input" name="gpu_type" value="">
@@ -1161,7 +1188,7 @@
                 </div>
                 
                 <!-- GPU and node combination (always visible now) -->
-                <div id="gpu-node-section" class="field">
+                <div id="gpu-node-section" class="field" style="display: none;">
                     <label class="label">GPU and Node Configuration</label>
                     <div class="control">
                         <div id="gpu-node-options" class="buttons gpu-node-buttons-container"></div>
