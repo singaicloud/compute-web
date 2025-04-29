@@ -360,11 +360,41 @@
                         if (data.success) {
                             window.location.href = `/ssh.html?session_id=${data.session_id}`;
                         } else {
-                            alert("SSH connection failed.");
+                            let errorMessage = "SSH connection failed.";
+                            if (data.message) {
+                                errorMessage = data.message;
+                            }
+                            
+                            if (data.details) {
+                                if (Array.isArray(data.details)) {
+                                    errorMessage += "\n\n" + data.details.join("\n");
+                                } else {
+                                    errorMessage += "\n\n" + data.details;
+                                }
+                            }
+                            
+                            alert(errorMessage);
                         }
                     })
                     .catch(error => {
                         console.error('Error connecting to SSH:', error);
+                        let errorMessage = "SSH connection failed.";
+                        if (error.response && error.response.data) {
+                            if (error.response.data.message) {
+                                errorMessage = error.response.data.message;
+                            }
+                            if (error.response.data.details) {
+                                if (Array.isArray(error.response.data.details)) {
+                                    errorMessage += "\n\n" + error.response.data.details.join("\n");
+                                } else {
+                                    errorMessage += "\n\n" + error.response.data.details;
+                                }
+                            }
+                        } else if (error.message) {
+                            errorMessage += "\n\n" + error.message;
+                        }
+                        
+                        alert(errorMessage);
                     });
                 } else {
                     alert("SSH connection is not available.");
