@@ -526,13 +526,14 @@
                         image_tag: imageTag,
                         description: description
                     })
-                    .then(response => {
-                        alert(`Image ${imageName}:${imageTag} created successfully. Please go to the Image page to view the image.`);
-                    })
-                    .catch(error => {
-                        console.error('Error committing container:', error);
-                        alert(`Error creating image: ${error.message || 'Unknown error'}`);
-                    });
+                    // .then(response => {
+                    //     alert(`Image ${imageName}:${imageTag} created successfully. Please go to the Image page to view the image.`);
+                    // })
+                    // .catch(error => {
+                    //     console.error('Error committing container:', error);
+                    //     alert(`Error creating image: ${error.message || 'Unknown error'}`);
+                    // });
+                    alert(`Image ${imageName}:${imageTag} created successfully. Please go to the Image page to view the image.`);
                 };
                 
                 // Show the modal
