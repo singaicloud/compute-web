@@ -748,8 +748,8 @@
                                     btn.classList.remove('is-primary', 'is-selected');
                                 });
                                 this.classList.add('is-primary', 'is-selected');
-                                document.getElementById('gpu-limit-input').value = this.dataset.gpus;
-                                document.getElementById('node-replicas-input').value = this.dataset.nodes;
+                                document.getElementById('num-gpu-per-node-input').value = this.dataset.gpus;
+                                document.getElementById('num-node-input').value = this.dataset.nodes;
                                 
                                 // Update resource allocation preview with the first selected GPU type (for UI display)
                                 updateResourceAllocationPreview(firstSelectedGpuType, option.gpus, option.nodes);
@@ -937,10 +937,10 @@
                         namespace: document.querySelector('input[name="namespace"]').value || username,
                         job_name: document.querySelector('input[name="job_name"]').value || 'job',
                         master_image: document.querySelector('select[name="master_image"]').value,
-                        node_replicas: parseInt(document.getElementById('node-replicas-input').value) || 1,
+                        num_node: parseInt(document.getElementById('num-node-input').value) || 1,
                         cpu_limit: 2,
                         memory_limit: '10Gi',
-                        gpu_limit: parseInt(document.getElementById('gpu-limit-input').value) || 0,
+                        num_gpu_per_node: parseInt(document.getElementById('num-gpu-per-node-input').value) || 0,
                         commandArray: commandValue ? commandValue.split(/\s+/).map(arg => arg.trim()) : [],
                         env_vars: [],
                         use_ssh: useSSH,
@@ -977,8 +977,8 @@
                                             <tr><td>Job Name:</td><td>${data.job_name}</td></tr>
                                             <tr><td>Image:</td><td>${data.master_image}</td></tr>
                                             <tr><td>GPU Type:</td><td>${document.getElementById('gpu-name-input').value}</td></tr>
-                                            <tr><td>GPU Count:</td><td>${data.gpu_limit}</td></tr>
-                                            <tr><td>node Count:</td><td>${data.node_replicas}</td></tr>
+                                            <tr><td>GPU Count:</td><td>${data.num_gpu_per_node}</td></tr>
+                                            <tr><td>node Count:</td><td>${data.num_node}</td></tr>
                                             <tr><td>CPU Limit:</td><td>${data.cpu_limit} cores</td></tr>
                                             <tr><td>Memory Limit:</td><td>${data.memory_limit}</td></tr>
                                             <tr><td>Command:</td><td>${data.commandArray.length > 0 ? data.commandArray.join(' ') : 'None (SSH mode)'}</td></tr>
@@ -1197,8 +1197,8 @@
                     <label class="label">GPU and Node Configuration</label>
                     <div class="control">
                         <div id="gpu-node-options" class="buttons gpu-node-buttons-container"></div>
-                        <input type="hidden" id="gpu-limit-input" name="gpu_limit" value="1">
-                        <input type="hidden" id="node-replicas-input" name="node_replicas" value="1">
+                        <input type="hidden" id="num-gpu-per-node-input" name="num_gpu_per_node" value="1">
+                        <input type="hidden" id="num-node-input" name="num_node" value="1">
                     </div>
                     
                     <!-- Resource Allocation Preview -->
