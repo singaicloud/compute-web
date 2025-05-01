@@ -705,6 +705,10 @@
                 const saveButton = document.getElementById('save-port-mapping');
                 saveButton.onclick = function() {
                     const containerPort = document.getElementById('container-port-input').value;
+                    if (containerPort > 65535) {
+                        alert('Container port must be less than 65535.');
+                        return;
+                    }
                     if (containerPort) {
                         api.get(`/port/add_proxy?ip=${podIp}&name=${containerHostname}&port=${containerPort}`, null, true)
                             .then(response => {
@@ -1062,9 +1066,9 @@
                 <div class="field">
                     <label class="label">Add New Port Mapping</label>
                     <div class="control">
-                        <input id="container-port-input" class="input" type="number" placeholder="Enter container port (e.g.8080)">
+                        <input id="container-port-input" class="input" type="number" placeholder="Enter a container port (e.g.8080) that does not exceed 65535">
                     </div>
-                    <p class="help">Specify the port number that your application uses inside the container</p>
+                    <p class="help">Specify the port number that application uses inside the container. The valid number cannot exceed 65535.</p>
                 </div>
                 <div class="field is-grouped">
                     <div class="control">
