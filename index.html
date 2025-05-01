@@ -101,16 +101,6 @@
                                 }
                             }).filter(Boolean);
                         });
-                        // update status for each job and if there are pods running, the job status is running, otherwise we use the first pod status
-                        jobs.forEach(job => {
-                            if (job.pods.length === 0) {
-                                job.status = "NoPodFound";
-                            } else if (job.pods.some(pod => pod.Status === "Running")) {
-                                job.status = "Running";
-                            } else {
-                                job.status = job.pods[0].Status;
-                            }
-                        });
                         // console.log('Jobs updated:', jobs);
 
                         // Sort by start time
@@ -119,16 +109,93 @@
                         const jobCardsContainer = document.getElementById('job-cards-container');
                         jobCardsContainer.innerHTML = '';
                         jobs.forEach(job => {
+                            let jobCard;
                             if (job.pods && job.pods.length > 0) {
                                 // console.log("job", job);
-                                const jobCard = createJobCard(job);
-                                jobCardsContainer.appendChild(jobCard);
+                                jobCard = createJobCard(job);
+                            } else {
+                                // Create card for job without pods
+                                jobCard = createEmptyJobCard(job);
                             }
+                            jobCardsContainer.appendChild(jobCard);
                         });
                     })
                     .catch(error => {
                         console.error('Error fetching jobs/pods:', error);
                     });
+            }
+
+            // Create Job card for job without pods
+            function createEmptyJobCard(job) {
+                // Job info in Job cards
+                const jobName = job.job_name;
+                let status = '';
+                let message = '';
+                let statusClass = '';
+                if (job.status.includes('-')) {
+                    tmp_status = job.status.split('-')[0];
+                    message = job.status.split('-')[1];
+                    statusClass = getStatusClass(tmp_status);
+                    status = tmp_status.split(':')[1];
+                } else {
+                    status = job.status;
+                    statusClass = getStatusClass(status);
+                }
+                const start_time = job.start_time;
+                const namespace = job.namespace;
+
+                const jobId = `job-${jobName.replace(/\s+/g, '-').toLowerCase()}`;
+                
+                const card = document.createElement('div');
+                card.className = 'box job-card';
+                card.setAttribute('data-job-name', jobName);
+
+                card.innerHTML = `
+                    <div class="job-card-header">
+                        <div class="job-header-top">
+                            <div class="job-title">
+                                <span class="status-badge ${statusClass}">${status}</span>
+                                <span class="job-name">${jobName}</span>
+                            </div>
+                            <div class="job-actions">
+                                <div class="job-action-button info" onclick="event.stopPropagation(); showSetupInfo('${jobName}')">
+                                    <i class="fa-solid fa-info-circle"></i>
+                                    <span>Info</span>
+                                </div>
+                                ${message ? `
+                                    <div class="job-action-button info" onclick="event.stopPropagation(); showErrorMessage('${message}')">
+                                        <i class="fa-solid fa-file"></i>
+                                        <span>Log</span>
+                                    </div>
+                                ` : ''}
+                                <div class="job-action-button danger" onclick="event.stopPropagation(); deleteEmptyJob('${jobName}', '${namespace}')">
+                                    <i class="fa-solid fa-trash"></i>
+                                    <span>Delete</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="job-meta">
+                            <div class="job-meta-item">
+                                <i class="fa-solid fa-user job-meta-icon"></i>
+                                <div class="job-meta-value">${namespace}</div>
+                            </div>
+                            <div class="job-meta-item">
+                                <i class="fa-solid fa-clock job-meta-icon"></i>
+                                <div class="job-meta-value">${start_time}</div>
+                            </div>
+                            <div class="job-meta-item">
+                                <i class="fa-solid fa-microchip job-meta-icon"></i>
+                                <div class="job-meta-value">0 GPU</div>
+                            </div>
+                            <div class="job-meta-item">
+                                <i class="fa-solid fa-cube job-meta-icon"></i>
+                                <div class="job-meta-value job-image">Not available</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                return card;
             }
 
             // Create Job card for each job
@@ -601,6 +668,30 @@
                 }
             };
 
+            // delete empty job action
+            window.deleteEmptyJob = function(jobName, namespace) {
+                if (confirm(`Are you sure you want to delete the job ${jobName}?`)) {
+                    document.getElementById("overlay").style.display = "block";
+                    
+                    // Need one API to delete job without pods, not implemented yet
+                    api.post(`/me/delete-job`, {
+                        namespace: namespace,
+                        job_name: jobName
+                    })
+                    .then(response => {
+                        alert(`Job ${jobName} deleted successfully.`);
+                        setTimeout(() => {
+                            location.reload();
+                        }, 2000);
+                    })
+                    .catch(error => {
+                        console.error('Error deleting job:', error);
+                        alert('Error deleting job.');
+                        document.getElementById("overlay").style.display = "none";
+                    });
+                }
+            };
+
             function showPortMappingModal(podIp, containerName) {
                 const modal = document.getElementById('port-modal');
                 const existingMappings = document.getElementById('existing-port-mappings');
@@ -845,10 +936,10 @@
             // job/container status class
             function getStatusClass(status) {
                 status = status.toLowerCase();
-                if (status === 'running') return 'status-running';
-                if (status === 'pending' || status === 'containercreating' || status === 'podinitialized') return 'status-pending';
-                if (status === 'failed' || status === 'error' || status === 'crashloopbackoff' || status === 'unschedulable') return 'status-failed';
-                if (status === 'completed' || status === 'succeeded') return 'status-completed';
+                if (status.includes('running')) return 'status-running';
+                if (status.includes('pending') || status.includes('containercreating') || status.includes('podinitialized')) return 'status-pending';
+                if (status.includes('failed') || status.includes('error') || status.includes('crashloopbackoff') || status.includes('unschedulable')) return 'status-failed';
+                if (status.includes('completed') || status.includes('succeeded')) return 'status-completed';
                 return 'status-unknown';
             }
 
