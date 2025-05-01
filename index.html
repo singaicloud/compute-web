@@ -674,7 +674,7 @@
                     document.getElementById("overlay").style.display = "block";
                     
                     // Need one API to delete job without pods, not implemented yet
-                    api.post(`/me/delete-job`, {
+                    api.post(`/me/delete-container`, {
                         namespace: namespace,
                         job_name: jobName
                     })
