@@ -321,7 +321,7 @@
                                                             </div>
                                                         ` : ''}
                                                         ${containerStatusClass === 'status-running' ? `
-                                                        <div class="action-item" onclick="editContainer('${container["Pod IP"]}', '${container["Container Name"]}', '${container["Status"]}')">
+                                                        <div class="action-item" onclick="editContainer('${container["Pod IP"]}', '${container["Container Name"]}', '${container["Status"]}', '${container["Container Hostname"]}')">
                                                             <i class="pencil-icon"></i>
                                                                 <span>Port</span>
                                                             </div>
@@ -383,9 +383,9 @@
                     
             // Container actions
             // edit port mapping
-            window.editContainer = function(podIp, containerName, status) {
+            window.editContainer = function(podIp, containerName, status, containerHostname) {
                 if (status === 'Running') {
-                    showPortMappingModal(podIp, containerName);
+                    showPortMappingModal(podIp, containerName, containerHostname);
                 } else {
                     alert('Cannot edit. The container is not running.');
                 }
@@ -692,7 +692,7 @@
                 }
             };
 
-            function showPortMappingModal(podIp, containerName) {
+            function showPortMappingModal(podIp, containerName, containerHostname) {
                 const modal = document.getElementById('port-modal');
                 const existingMappings = document.getElementById('existing-port-mappings');
                 const modalClose = modal.querySelector('.modal-close');
@@ -706,12 +706,12 @@
                 saveButton.onclick = function() {
                     const containerPort = document.getElementById('container-port-input').value;
                     if (containerPort) {
-                        api.get(`/port/add_proxy?ip=${podIp}&name=${containerName}&port=${containerPort}`, null, true)
+                        api.get(`/port/add_proxy?ip=${podIp}&name=${containerHostname}&port=${containerPort}`, null, true)
                             .then(response => {
                                 const modal = document.getElementById('port-modal');
                                 modal.classList.remove('is-active');
                                 setTimeout(() => {
-                                    showPortMappingModal(podIp, containerName);
+                                    showPortMappingModal(podIp, containerName, containerHostname);
                                 }, 2);
                                 if (typeof response === 'string') {
                                     alert(response);
@@ -727,7 +727,7 @@
                                     const modal = document.getElementById('port-modal');
                                     modal.classList.remove('is-active');
                                     setTimeout(() => {
-                                        showPortMappingModal(podIp, containerName);
+                                        showPortMappingModal(podIp, containerName, containerHostname);
                                     }, 2);
                                 } else {
                                     console.error('Error mapping port:', error);
@@ -773,13 +773,13 @@
                                                                 click: (e) => {
                                                                     e.stopPropagation();
                                                                     if (confirm(`Are you sure you want to delete port mapping ${mapping.container_port}?`)) {
-                                                                        api.get(`/port/remove_proxy?ip=${podIp}&name=${containerName}&port=${mapping.container_port}`, null, true)
+                                                                        api.get(`/port/remove_proxy?ip=${podIp}&name=${containerHostname}&port=${mapping.container_port}`, null, true)
                                                                             .then(response => {
                                                                                 alert(`Successfully removed port mapping: ${mapping.container_port}`);                                                                                
                                                                                 const modal = document.getElementById('port-modal');
                                                                                 modal.classList.remove('is-active');
                                                                                 setTimeout(() => {
-                                                                                    showPortMappingModal(podIp, containerName);
+                                                                                    showPortMappingModal(podIp, containerName, containerHostname);
                                                                                 }, 2);
                                                                             })
                                                                             .catch(error => {
@@ -788,7 +788,7 @@
                                                                                     const modal = document.getElementById('port-modal');
                                                                                     modal.classList.remove('is-active');
                                                                                     setTimeout(() => {
-                                                                                        showPortMappingModal(podIp, containerName);
+                                                                                        showPortMappingModal(podIp, containerName, containerHostname);
                                                                                     }, 2);
                                                                                 } else {
                                                                                     console.error('Error removing port mapping:', error);
