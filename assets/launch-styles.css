@@ -487,6 +487,9 @@ select[name="master_image"] {
 .metadata-content {
     color: #2d3748;
     line-height: 1.6;
+    font-family: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
 .metadata-content h1, 
@@ -568,11 +571,13 @@ select[name="master_image"] {
 
 .metadata-title {
     font-size: 1.25rem;
-    font-weight: 600;
+    font-weight: 600 !important;
     color: #1a202c;
     margin-bottom: 12px;
     display: flex;
     align-items: center;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
 .metadata-scenarios span {
@@ -587,13 +592,19 @@ select[name="master_image"] {
 }
 
 .metadata-repo-link {
-    color: #3182ce;
+    color: #3182ce !important;
     text-decoration: none;
     display: inline-flex;
     align-items: center;
     gap: 0.3rem;
     font-size: 0.8rem;
     margin-left: 10px;
+    line-height: normal;
+}
+
+.metadata-repo-link i {
+    display: inline-flex;
+    font-size: 1rem;
 }
 
 .metadata-repo-link:hover {
