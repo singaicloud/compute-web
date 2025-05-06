@@ -178,19 +178,48 @@
                     const portInput = document.querySelector('.exposed-port'); 
                     const statusIconsContainer = document.getElementById('status-icons-container');
                     
+                    const gpuButtons = document.querySelectorAll('.gpu-option.is-selected');
+                    gpuButtons.forEach(button => {
+                        button.classList.remove('is-primary', 'is-selected');
+                    });
+                    
+                    const nodeOptions = document.querySelectorAll('.gpu-node-option.is-selected');
+                    nodeOptions.forEach(button => {
+                        button.classList.remove('is-primary', 'is-selected');
+                    });
+                    
+                    document.getElementById('gpu-type-input').value = '';
+                    document.getElementById('gpu-name-input').value = '';
+                    document.getElementById('num-gpu-per-node-input').value = '1';
+                    document.getElementById('num-node-input').value = '1';
+                    
+                    const gpuNodeSection = document.getElementById('gpu-node-section');
+                    if (gpuNodeSection) {
+                        gpuNodeSection.style.display = 'none';
+                    }
+                    
+                    const resourcePreview = document.getElementById('resource-allocation-preview');
+                    if (resourcePreview) {
+                        resourcePreview.style.display = 'none';
+                    }
+                    
+                    const matchStatusGoodElement = document.getElementById('match-status-good');
+                    const matchStatusPoorElement = document.getElementById('match-status-poor');
+                    if(matchStatusGoodElement) matchStatusGoodElement.style.display = 'none';
+                    if(matchStatusPoorElement) matchStatusPoorElement.style.display = 'none';
+                    if(statusIconsContainer) statusIconsContainer.style.display = 'none';
+                    
+                    const nodeOptionsContainer = document.getElementById('gpu-node-options');
+                    if (nodeOptionsContainer) {
+                        nodeOptionsContainer.innerHTML = '';
+                    }
+                    
                     // If no image is selected, hide all content and return
                     if (!selectedImage) {
                         if (metadataContent) metadataContent.innerHTML = '';
                         if (metadataContainer) metadataContainer.style.display = 'none';
                         if (commandInput) commandInput.value = '';
                         if (portInput) portInput.value = ''; 
-                        
-                        // Hide resource matching status icons
-                        const matchStatusGoodElement = document.getElementById('match-status-good');
-                        const matchStatusPoorElement = document.getElementById('match-status-poor');
-                        if(matchStatusGoodElement) matchStatusGoodElement.style.display = 'none';
-                        if(matchStatusPoorElement) matchStatusPoorElement.style.display = 'none';
-                        if(statusIconsContainer) statusIconsContainer.style.display = 'none';
                         
                         return;
                     }
