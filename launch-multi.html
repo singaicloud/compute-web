@@ -263,6 +263,58 @@
                         portInput.value = '';
                     }
                     
+                    // Set default environment variables
+                    if (selectedImageObj.default_env_vars && Array.isArray(selectedImageObj.default_env_vars) && selectedImageObj.default_env_vars.length > 0) {
+                        const envVarContainer = document.querySelector('.env-var-container');
+                        while (envVarContainer.children.length > 1) {
+                            envVarContainer.removeChild(envVarContainer.lastChild);
+                        }
+                        
+                        // Set first env var
+                        const firstEnvVar = selectedImageObj.default_env_vars[0];
+                        const firstEnvVarEl = envVarContainer.querySelector('.env-var');
+                        const nameInput = firstEnvVarEl.querySelector('input[name="env_name"]');
+                        const valueInput = firstEnvVarEl.querySelector('input[name="env_value"]');
+                        
+                        if (nameInput && valueInput) {
+                            nameInput.value = firstEnvVar.name || '';
+                            valueInput.value = firstEnvVar.value || '';
+                        }
+                        
+                        // Add remaining env vars
+                        for (let i = 1; i < selectedImageObj.default_env_vars.length; i++) {
+                            const envVar = selectedImageObj.default_env_vars[i];
+                            const newRow = document.createElement('div');
+                            newRow.classList.add('field', 'is-grouped', 'env-var');
+                            newRow.innerHTML = `
+                                <div class="control is-expanded">
+                                    <input class="input" type="text" name="env_name" placeholder="Variable name" value="${envVar.name || ''}">
+                                </div>
+                                <div class="control is-expanded">
+                                    <input class="input" type="text" name="env_value" placeholder="Value" value="${envVar.value || ''}">
+                                </div>
+                                <div class="control">
+                                    <button class="button is-danger remove_env_var"> × </button>
+                                </div>
+                            `;
+                            envVarContainer.appendChild(newRow);
+                            
+                            // Add event listener for remove button
+                            const removeBtn = newRow.querySelector('.remove_env_var');
+                            if (removeBtn) {
+                                removeBtn.addEventListener('click', function() {
+                                    envVarContainer.removeChild(newRow);
+                                });
+                            }
+                        }
+                    } else {
+                        // Clear all env var inputs
+                        const envVarInputs = document.querySelectorAll('.env-var input');
+                        envVarInputs.forEach(input => {
+                            input.value = '';
+                        });
+                    }
+                    
                     // Build metadata HTML
                     let metadataHTML = `<div class="metadata-title">
                         ${displayName}
@@ -820,10 +872,10 @@
                     var newEnvVar = document.createElement('div');
                     newEnvVar.classList.add('field', 'is-grouped', 'env-var');
                     newEnvVar.innerHTML = `
-                        <div class="control">
+                        <div class="control is-expanded">
                             <input class="input" type="text" name="env_name" placeholder="Variable name">
                         </div>
-                        <div class="control">
+                        <div class="control is-expanded">
                             <input class="input" type="text" name="env_value" placeholder="Value">
                         </div>
                         <div class="control">
