@@ -326,6 +326,7 @@
                         img => img.full_name === selectedImage
                     );
 
+
                     // If the image is not found, hide all content
                     if (!selectedImageObj) {
                         if (metadataContainer) metadataContainer.style.display = 'none';
@@ -367,6 +368,13 @@
                     } else if (portInput) {
                         portInput.value = '';
                     }
+
+
+
+
+
+
+
 
                     // Set default environment variables
                     if (selectedImageObj.default_env_vars && Array.isArray(selectedImageObj.default_env_vars) && selectedImageObj.default_env_vars.length > 0) {
@@ -440,8 +448,14 @@
                     }
 
                     // Update metadata content and display
-                    metadataContent.innerHTML = metadataHTML;
-                    metadataContainer.style.display = 'block';
+                    if (!selectedImageObj.description) {
+                        metadataContainer.style.display = "none";
+                    } else {
+                        metadataContent.innerHTML = metadataHTML;
+                        metadataContainer.style.display = 'block';
+
+                    }
+
 
                     // Get current selected GPU information
                     const gpuTypeInput = document.getElementById('gpu-type-input');
@@ -611,10 +625,8 @@
                                 let fullName = image.full_name;
                                 arr = fullName.split('/');
                                 let registry;
-                                let name;
+                                const name = image.display_name;
                                 registry = arr[0];
-                                name = (arr.length == 3) ? arr[2] : arr[1];
-                                name = name[0].toUpperCase() + name.slice(1).toLowerCase();
 
                                 let status = "Public";
                                 let bc = "#1967d216";
@@ -640,7 +652,7 @@
                                         ''}
                                     </div>
                                     <div class = "card-divider"></div>
-                                    <p> placeholder for image description </p>
+                                    <p>${image.short_description}</p>
                                 `;
 
                                 card.addEventListener('click', () => {
