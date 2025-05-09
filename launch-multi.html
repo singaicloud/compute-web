@@ -125,7 +125,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 12px;
+            padding: 7px 11px 7px 11px;
             border: 1px solid #dbdbdb;
             background-color: #fff;
             border-radius: 4px;
@@ -165,7 +165,8 @@
         }
 
         .options-grid {
-            display: grid;
+            display: flex;
+            flex-direction: column;
             grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
             gap: 12px;
         }
@@ -187,22 +188,20 @@
             font-weight: bold;
         }
 
-        .card-divider {
-            width: 100%;
-            height: 1px;
-            border-bottom: 1px solid rgba(51, 51, 51, 0.95);
-            margin-top: 0.8em;
-            margin-bottom: 0.8em;
-        }
-
         .card-header {
             display: flex;
             flex-direction: row;
-            justify-content: space-between;
+            gap: 10px;
             border-radius: 0;
             box-shadow: none;
+            margin-bottom: 8px;
         }
 
+        .tag {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 75%;
+        }
     </style>
 
     <!-- Font -->
@@ -251,7 +250,6 @@
 
                 // Get friendly model name display
                 function getDisplayModelName(imageName) {
-
                     // For other names, perform general formatting
                     return imageName.split('-').map(part => {
                         // Handle number suffixes, like 7b to 7B
@@ -263,6 +261,12 @@
                     }).join('-');
                 }
 
+                function getNameWithLatestVersion(imageName) {
+                    arr = imageName.split('/');
+                    let name;
+                    name = (arr.length == 3) ? arr[2] : arr[1];
+                    return name[0].toUpperCase() + name.slice(1).toLowerCase();
+                }
                 // Add function to display image metadata
                 function handleImageChange() {
                     const selectedImage = document.getElementById('master_image').value;
@@ -271,7 +275,6 @@
                     const commandInput = document.querySelector('input[name="command"]');
                     const portInput = document.querySelector('.exposed-port');
                     const statusIconsContainer = document.getElementById('status-icons-container');
-
                     const gpuButtons = document.querySelectorAll('.gpu-option.is-selected');
                     gpuButtons.forEach(button => {
                         button.classList.remove('is-primary', 'is-selected');
@@ -340,9 +343,9 @@
                     }
 
 
-                    const triggerDisplay = document.querySelector('.select-header span');
+                    const triggerDisplay = document.querySelector('.select-header-name');
                     if (selectedImageObj && triggerDisplay) {
-                        triggerDisplay.textContent = getDisplayModelName(selectedImageObj.name);
+                        triggerDisplay.textContent = getNameWithLatestVersion(selectedImage);
                     }
 
                     // Found the image, process image information
@@ -610,22 +613,31 @@
                                 let registry;
                                 let name;
                                 registry = arr[0];
-                                if(arr.length == 3){
-                                    name = arr[2];
-                                } else name = arr[1];
-                                let status = "fa-lock-open";
+                                name = (arr.length == 3) ? arr[2] : arr[1];
+                                name = name[0].toUpperCase() + name.slice(1).toLowerCase();
 
-                                if(registry.substr(registry.length - 1) === "1"){
-                                    status = "fa-lock";
-                                } 
+                                let status = "Public";
+                                let bc = "#1967d216";
+                                let tc = "#1967d2";
+
+                                if (registry.substr(registry.length - 1) === "1") {
+                                    status = "Private";
+                                    bc = "rgba(198, 40, 40, 0.05)"
+                                    tc = "#c62828";
+                                }
                                 console.log(registry, name);
                                 /**-------------------------
                                  * innerHTML for card content
-                                 -------------------------*/ 
+                                 -------------------------*/
                                 card.innerHTML = `
                                     <div class = "card-header"> 
+                                    <div class = "tag" style = "background-color: ${bc}; color: ${tc};">${status}</div>
                                     <h4 class = "option-title">${name}</h4>
-                                    <i class="fa-solid ${status}"></i>
+                                    ${image.github_repo ?
+                                        `<a href="${image.github_repo}" target="_blank" class="metadata-repo-link"  style = "margin: 0;">
+                                    <i class="fa-brands fa-github"></i>
+                                     </a>` :
+                                        ''}
                                     </div>
                                     <div class = "card-divider"></div>
                                     <p> placeholder for image description </p>
@@ -973,7 +985,7 @@
                     previewContainer.style.display = 'block';
 
                     // Get current selected image
-                    const selectedImage = document.querySelector('select[name="master_image"]').value;
+                    const selectedImage = document.getElementById('master_image').value;
 
                     // Get match status elements
                     const matchStatusGoodElement = document.getElementById('match-status-good');
@@ -1303,7 +1315,7 @@
                         <!--Trigger button-->
                         <div class="image-select-trigger">
                             <div class="select-header">
-                                <span>Select an image ...</span>
+                                <span class="select-header-name">Select an image ...</span>
                                 <span class="dropdown-icon"><i class="fa-solid fa-caret-down"></i></span>
                             </div>
                         </div>
