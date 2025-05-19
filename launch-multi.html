@@ -602,7 +602,7 @@
                         gpuButton.dataset.total = filteredGpuTypes[gpuType].total || 0;
                         gpuButton.dataset.used = filteredGpuTypes[gpuType].used || 0;
                         const available = Math.max(0, (filteredGpuTypes[gpuType].total || 0) - (filteredGpuTypes[gpuType].used || 0));
-                        gpuButton.textContent = `${filteredGpuTypes[gpuType].gpu_name || gpuType} (${available}/${filteredGpuTypes[gpuType].total || 0})`;
+                        gpuButton.textContent = `${filteredGpuTypes[gpuType].gpu_name || gpuType} (${available})`;
                         // Set fixed width and height for consistent button size - same as region buttons
                         gpuButton.style.width = '150px';
                         gpuButton.style.height = '40px';
