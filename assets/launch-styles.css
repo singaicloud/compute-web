@@ -248,12 +248,42 @@
 
 /* Image Metadata Styles */
 #image-metadata-container {
-    background-color: white;
+    background-color: #f9f9fc;
     border-radius: 6px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-    margin-top: 15px;
-    padding: 25px;
     border: 1px solid #e2e8f0;
+    margin-top: 16px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+    transition: all 0.3s ease;
+}
+
+pre.metadata-text {
+    font-family: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+    background: none;
+    padding: 0;
+    margin: 0;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: #3c4257;
+    white-space: pre-wrap;
+}
+
+pre.metadata-text strong {
+    color: #2563eb;
+    font-weight: 600;
+}
+
+/* Enhanced first line (title) display effect */
+pre.metadata-text::first-line {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1a202c;
+}
+
+/* Add some spacing to each section */
+pre.metadata-text {
+    display: grid;
+    grid-row-gap: 4px;
 }
 
 /* Markdown styles */
@@ -451,4 +481,132 @@ select[name="master_image"] {
 
 .fa-exclamation-circle {
     color: #e53e3e;
+}
+
+/* Markdown content styling */
+.metadata-content {
+    color: #2d3748;
+    line-height: 1.6;
+    font-family: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.metadata-content h1, 
+.metadata-content h2, 
+.metadata-content h3, 
+.metadata-content h4 {
+    margin-top: 1em;
+    margin-bottom: 0.5em;
+    font-weight: 600;
+    color: #1a202c;
+}
+
+.metadata-content h1 {
+    font-size: 1.5rem;
+}
+
+.metadata-content h2 {
+    font-size: 1.3rem;
+}
+
+.metadata-content h3 {
+    font-size: 1.1rem;
+}
+
+.metadata-content p {
+    margin-bottom: 1em;
+}
+
+.metadata-content ul, 
+.metadata-content ol {
+    margin-left: 1.5em;
+    margin-bottom: 1em;
+}
+
+.metadata-content li {
+    margin-bottom: 0.5em;
+}
+
+.metadata-content code {
+    background: #f0f0f0;
+    padding: 0.2em 0.4em;
+    border-radius: 3px;
+    font-family: monospace;
+    font-size: 0.9em;
+}
+
+.metadata-content pre {
+    background: #f5f5f5;
+    padding: 1em;
+    border-radius: 5px;
+    overflow-x: auto;
+    margin-bottom: 1em;
+}
+
+.metadata-content a {
+    color: #3182ce;
+    text-decoration: none;
+}
+
+.metadata-content a:hover {
+    text-decoration: underline;
+}
+
+/* Metadata title and components */
+.metadata-item {
+    margin-bottom: 6px;
+}
+
+.metadata-label {
+    font-weight: 500;
+    color: #4a5568;
+    width: 200px;
+    flex-shrink: 0;
+}
+
+.metadata-value {
+    color: #2d3748;
+}
+
+.metadata-title {
+    font-size: 1.25rem;
+    font-weight: 600 !important;
+    color: #1a202c;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.metadata-scenarios span {
+    display: inline-block;
+    background-color: #ebf4ff;
+    color: #3182ce;
+    padding: 0px 8px;
+    border-radius: 4px;
+    margin-right: 6px;
+    margin-bottom: 4px;
+    font-size: 0.85rem;
+}
+
+.metadata-repo-link {
+    color: #3182ce !important;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.8rem;
+    margin-left: 10px;
+    line-height: normal;
+}
+
+.metadata-repo-link i {
+    display: inline-flex;
+    font-size: 1rem;
+}
+
+.metadata-repo-link:hover {
+    text-decoration: underline;
 }
