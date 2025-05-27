@@ -570,20 +570,21 @@
                     // Iterate through all GPU nodes
                     for (const nodeKey in window.gpuInfo) {
                         const node = window.gpuInfo[nodeKey];
+
+                        // Always add this GPU type to the dictionary no matter it is selected or not
+                        // If this GPU type doesn't exist in our dictionary yet, create an array for it
+                        if (!filteredGpuTypes[node.gpu_sku]) {
+                            filteredGpuTypes[node.gpu_sku] = {
+                                nodes: [],
+                                gpu_name: node.gpu_name,
+                                gpu_memory_gb: node.gpu_memory_gb,
+                                total: 0,
+                                used: 0
+                            };
+                        }
                         
                         // Check if node's region is in selected regions
                         if (selectedRegions.includes(node.region)) {
-                            // If this GPU type doesn't exist in our dictionary yet, create an array for it
-                            if (!filteredGpuTypes[node.gpu_sku]) {
-                                filteredGpuTypes[node.gpu_sku] = {
-                                    nodes: [],
-                                    gpu_name: node.gpu_name,
-                                    gpu_memory_gb: node.gpu_memory_gb,
-                                    total: 0,
-                                    used: 0
-                                };
-                            }
-                            
                             // Add this node to the array for this GPU type
                             filteredGpuTypes[node.gpu_sku].nodes.push(node);
                             
