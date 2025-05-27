@@ -190,8 +190,8 @@
                     
                     document.getElementById('gpu-type-input').value = '';
                     document.getElementById('gpu-name-input').value = '';
-                    document.getElementById('num-gpu-per-node-select').value = '1';
-                    document.getElementById('num-node-input').value = '1';
+                    document.getElementById('num-gpu-per-node-select').value = '-1';
+                    document.getElementById('num-node-input').value = '0';
                     
                     const gpuNodeSection = document.getElementById('gpu-node-section');
                     if (gpuNodeSection) {
@@ -1348,8 +1348,8 @@
                                     <div class="control">
                                         <div class="select">
                                             <select id="num-gpu-per-node-select" name="num_gpu_per_node" onchange="updateNodeMaxCount()">
-                                                <!-- <option value="0" selected>0 GPU</option> -->
-                                                <option value="1" selected>1 GPU</option>
+                                                <option value="0">0 GPU</option>
+                                                <option value="1">1 GPU</option>
                                                 <option value="2">2 GPUs</option>
                                                 <option value="4">4 GPUs</option>
                                                 <option value="8">8 GPUs</option>
