@@ -1061,7 +1061,7 @@
                 });
                 
                 // Calculate maximum possible nodes based on available GPUs
-                return gpusPerNode > 0 ? Math.floor(totalAvailableGPUs / gpusPerNode) : 10;
+                return gpusPerNode > 0 ? Math.floor(totalAvailableGPUs / gpusPerNode) : 1;
             }
 
             function updateNodeMaxCount() {
