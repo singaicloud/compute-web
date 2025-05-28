@@ -112,6 +112,93 @@
         .match-status.poor i {
             color: #e53e3e;
         }
+
+        /*------------------------------------
+        Styles for image selection
+        -------------------------------------*/
+
+
+        .select-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 7px 11px 7px 11px;
+            border: 1px solid #dbdbdb;
+            background-color: #fff;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .image-options {
+            position: absolute;
+            z-index: 1000;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #dbdbdb;
+            border-radius: 4px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            /* Fixed rgba syntax */
+            padding: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 8px;
+
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: opacity 0.2s, transform 0.2s, visibility 0.2s;
+        }
+
+        .image-options.visible {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .control {
+            position: relative;
+            /* Makes image-options position relative to this container */
+        }
+
+        .options-grid {
+            display: flex;
+            flex-direction: column;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 12px;
+        }
+
+        .option-card {
+            padding: 16px;
+            border: 1px solid #eee;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .option-card:hover {
+            transition: 0.3s ease;
+            background-color: #f5f5f5;
+        }
+
+        .option-title {
+            font-weight: bold;
+        }
+
+        .card-header {
+            display: flex;
+            flex-direction: row;
+            gap: 10px;
+            border-radius: 0;
+            box-shadow: none;
+            margin-bottom: 8px;
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 75%;
+        }
     </style>
     
     <!-- Font -->
@@ -169,9 +256,17 @@
                     }).join('-');
                 }
                 
+                function getNameWithLatestVersion(imageName) {
+                    arr = imageName.split('/');
+                    let name;
+                    name = (arr.length == 3) ? arr[2] : arr[1];
+                    return name[0].toUpperCase() + name.slice(1).toLowerCase();
+                }
+
                 // Add function to display image metadata
                 function handleImageChange() {
-                    const selectedImage = document.querySelector('select[name="master_image"]').value;
+                    // const selectedImage = document.querySelector('select[name="master_image"]').value;
+                    const selectedImage = document.getElementById('master_image').value;
                     const metadataContent = document.getElementById('image-metadata-content');
                     const metadataContainer = document.getElementById('image-metadata-container');
                     const commandInput = document.querySelector('input[name="command"]');
@@ -243,6 +338,11 @@
                         return;
                     }
                     
+                    const triggerDisplay = document.querySelector('.select-header-name');
+                    if (selectedImageObj && triggerDisplay) {
+                        triggerDisplay.textContent = getNameWithLatestVersion(selectedImage);
+                    }
+
                     // Found the image, process image information
                     // Image name display style
                     const displayName = getDisplayModelName(selectedImageObj.name);
@@ -335,8 +435,16 @@
                     }
                     
                     // Update metadata content and display
-                    metadataContent.innerHTML = metadataHTML;
-                    metadataContainer.style.display = 'block';
+                    // metadataContent.innerHTML = metadataHTML;
+                    // metadataContainer.style.display = 'block';
+
+                    if (!selectedImageObj.description) {
+                        metadataContainer.style.display = "none";
+                    } else {
+                        metadataContent.innerHTML = metadataHTML;
+                        metadataContainer.style.display = 'block';
+
+                    }
                     
                     // Get current selected GPU information
                     const gpuTypeInput = document.getElementById('gpu-type-input');
@@ -428,42 +536,123 @@
                             // Enhance images with metadata
                             enhanceImagesWithMetadata(data.images);
                             
-                            var select = document.querySelector('select[name="master_image"]');
-                            select.innerHTML = "";
+                            // var select = document.querySelector('select[name="master_image"]');
+                            // select.innerHTML = "";
+
+                            //Get DOM elements
+                            const container = document.querySelector('.options-grid');
+                            const hiddenSelect = document.querySelector('select[name="master_image"]'); // Will remove this later
+                            const masterImageInput = document.getElementById('master_image');
+
+                            container.innerHTML = '';
+                            if (hiddenSelect) hiddenSelect.innerHTML = ''; // Temporary cleanup
                             
                             data.images.forEach(image => {
-                                var option = document.createElement('option');
-                                option.value = image.full_name;
-                                option.textContent = image.full_name; // Restore original display, show full image name
-                                select.appendChild(option);
+                                // var option = document.createElement('option');
+                                // option.value = image.full_name;
+                                // option.textContent = image.full_name; // Restore original display, show full image name
+                                // select.appendChild(option);
+
+                                const card = document.createElement('div');
+                                card.className = 'option-card';
+
+                                let fullName = image.full_name;
+                                arr = fullName.split('/');
+                                let registry;
+                                const name = image.display_name;
+                                registry = arr[0];
+
+                                let status = "Public";
+                                let bc = "#1967d216";
+                                let tc = "#1967d2";
+
+                                if (registry.substr(registry.length - 1) === "1") {
+                                    status = "Private";
+                                    bc = "rgba(198, 40, 40, 0.05)"
+                                    tc = "#c62828";
+                                }
+                                console.log(registry, name);
+                                /**-------------------------
+                                 * innerHTML for card content
+                                -------------------------*/
+                                card.innerHTML = `
+                                    <div class = "card-header"> 
+                                    <div class = "tag" style = "background-color: ${bc}; color: ${tc};">${status}</div>
+                                    <h4 class = "option-title">${name}</h4>
+                                    ${image.github_repo ?
+                                        `<a href="${image.github_repo}" target="_blank" class="metadata-repo-link"  style = "margin: 0;">
+                                    <i class="fa-brands fa-github"></i>
+                                    </a>` :
+                                        ''}
+                                    </div>
+                                    <div class = "card-divider"></div>
+                                    <p>${image.short_description}</p>
+                                `;
+
+                                card.addEventListener('click', () => {
+                                    //remove previous selections
+                                    document.querySelectorAll('.option-card').forEach(c => c.classList.remove('selected'));
+                                    //Mark current card as selected
+                                    card.classList.add('selected');
+
+                                    masterImageInput.value = image.full_name;
+
+                                    const options = document.querySelector('.image-options');
+                                    options.classList.remove('visible');
+
+                                    handleImageChange();
+                                });
+
+                                container.appendChild(card);
+
+                                //Hidden option
+                                if (hiddenSelect) {
+                                    const option = document.createElement('option');
+                                    option.value = image.full_name;
+                                    option.textContent = image.full_name;
+                                    hiddenSelect.appendChild(option);
+                                }
                             });
                             
                             // Check if image is pre-selected
                             if (window.selectedImageFromUrl) {
                                 // Find with matching value
-                                const options = select.options;
-                                for (let i = 0; i < options.length; i++) {
-                                    if (options[i].value === window.selectedImageFromUrl) {
-                                        select.selectedIndex = i;
-                                        break;
-                                    }
+                                const preselectedCard = Array.from(container.children).find(card =>
+                                    card.dataset.value === window.selectedImageFromUrl
+                                );
+                                if (preselectedCard) {
+                                    preselectedCard.click(); // Trigger selection
                                 }
                             }
                             
-                            if (!select.value && select.options.length > 0) {
-                                select.selectedIndex = 0;
+                            // Set default selection if none exists
+                            if (!hiddenSelect.value && container.children.length > 0) {
+                                container.children[0].click();
                             }
-                            
-                            // Add event listener
-                            select.addEventListener('change', handleImageChange);
-                            
-                            // Immediately trigger selection event to display metadata
-                            handleImageChange();
                         })
                         .catch(error => {
                             console.error("Failed to fetch images:", error);
                         });
                 }
+
+                /**
+                 * Trigger select options
+                 */
+                document.querySelector('.image-select-trigger').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const options = document.querySelector('.image-options');
+                    options.classList.toggle('visible');
+                });
+
+                // Close when clicking outside
+                document.addEventListener('click', function (e) {
+                    const options = document.querySelector('.image-options');
+                    const trigger = document.querySelector('.image-select-trigger');
+
+                    if (!trigger.contains(e.target) && !options.contains(e.target)) {
+                        options.classList.remove('visible');
+                    }
+                });
                 
                 // No longer need to enhance image metadata, use data directly from backend API
                 function enhanceImagesWithMetadata(images) {
@@ -1169,7 +1358,8 @@
                 previewContainer.style.display = 'block';
                 
                 // Get current selected image
-                const selectedImage = document.querySelector('select[name="master_image"]').value;
+                // const selectedImage = document.querySelector('select[name="master_image"]').value;
+                const selectedImage = document.getElementById('master_image').value;
                 
                 // Get match status elements
                 const matchStatusGoodElement = document.getElementById('match-status-good');
@@ -1260,8 +1450,20 @@
                 <div class="field">
                     <label class="label">Container Image</label>
                     <div class="control">
-                        <div class="select is-fullwidth">
-                            <select name="master_image"></select>
+                        <input type="hidden" id="master_image" name="master_image">
+
+                        <!--Trigger button-->
+                        <div class="image-select-trigger">
+                            <div class="select-header">
+                                <span class="select-header-name">Select an image ...</span>
+                                <span class="dropdown-icon"><i class="fa-solid fa-caret-down"></i></span>
+                            </div>
+                        </div>
+
+                        <div class="image-options">
+                            <div class="options-grid">
+
+                            </div>
                         </div>
                     </div>
                 </div>
