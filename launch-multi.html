@@ -138,9 +138,8 @@
             border: 1px solid #dbdbdb;
             border-radius: 4px;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            /* Fixed rgba syntax */
-            padding: 12px;
-            max-height: 400px;
+            padding: 8px;
+            max-height: 350px;
             overflow-y: auto;
             margin-top: 8px;
 
@@ -165,15 +164,16 @@
             display: flex;
             flex-direction: column;
             grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 12px;
+            gap: 4px;
         }
 
         .option-card {
-            padding: 16px;
+            padding: 10px;
             border: 1px solid #eee;
-            border-radius: 6px;
+            border-radius: 4px;
             cursor: pointer;
             transition: transform 0.2s ease;
+            margin-bottom: 2px;
         }
 
         .option-card:hover {
@@ -183,21 +183,134 @@
 
         .option-title {
             font-weight: bold;
+            font-size: 0.9rem;
+            margin: 0;
         }
 
         .card-header {
             display: flex;
             flex-direction: row;
-            gap: 10px;
+            gap: 6px;
             border-radius: 0;
             box-shadow: none;
-            margin-bottom: 8px;
+            margin-bottom: 4px;
+            align-items: center;
         }
 
         .tag {
             display: inline-block;
-            padding: 6px 12px;
-            border-radius: 75%;
+            padding: 2px 6px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            line-height: 1.2;
+        }
+
+        /* Section header styles for image categories */
+        .section-header {
+            margin: 16px 0 12px 0;
+            padding: 0;
+        }
+        
+        .section-header:first-child {
+            margin-top: 0;
+        }
+        
+        .section-header .section-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #4a4a4a;
+            margin: 0 0 8px 0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .section-divider {
+            height: 1px;
+            background-color: #e0e0e0;
+            margin-bottom: 12px;
+        }
+
+        /* Tab styles for image categories */
+        .image-tabs {
+            display: flex;
+            border-bottom: 1px solid #dbdbdb;
+            margin-bottom: 8px;
+        }
+
+        .image-tab {
+            padding: 8px 12px;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #666;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s ease;
+            flex: 1;
+            text-align: center;
+        }
+
+        .image-tab:hover {
+            color: #333;
+            background-color: #f9f9f9;
+        }
+
+        .image-tab.active {
+            color: #1967d2;
+            border-bottom-color: #1967d2;
+            background-color: #f8fbff;
+        }
+
+        /* Private tab specific styles */
+        .image-tab[data-tab="private"]:hover {
+            color: #c62828;
+            background-color:rgb(255, 245, 247);
+        }
+
+        .image-tab[data-tab="private"].active {
+            color: #c62828;
+            border-bottom-color: #c62828;
+            /*background-color: #ffebee;*/
+        }
+
+        /* Public tab specific styles for consistency */
+        .image-tab[data-tab="public"]:hover {
+            color: #1967d2;
+            background-color:rgb(241, 247, 254);
+        }
+
+        .image-tab[data-tab="public"].active {
+            color: #1967d2;
+            border-bottom-color: #1967d2;
+            /*background-color: rgb(241, 247, 254);*/
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .tab-content .options-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        /* Compact description text */
+        .option-card p {
+            font-size: 0.8rem;
+            line-height: 1.2;
+            margin: 0;
+            color: #666;
+        }
+
+        /* Reduce GitHub icon size */
+        .metadata-repo-link i {
+            font-size: 0.9rem;
         }
     </style>
     
@@ -536,9 +649,28 @@
                             // Enhance images with metadata
                             enhanceImagesWithMetadata(data.images);
                             
-                            // var select = document.querySelector('select[name="master_image"]');
-                            // select.innerHTML = "";
-
+                            // Filter out images with FAILED status
+                            const filteredImages = data.images.filter(image => {
+                                return !image.status || !image.status.startsWith('FAILED');
+                            });
+                            
+                            // Categorize images into public and private
+                            const publicImages = [];
+                            const privateImages = [];
+                            
+                            filteredImages.forEach(image => {
+                                const fullName = image.full_name;
+                                const arr = fullName.split('/');
+                                const registry = arr[0];
+                                
+                                // Check if it's a private registry (ends with "1")
+                                if (registry.substr(registry.length - 1) === "1") {
+                                    privateImages.push(image);
+                                } else {
+                                    publicImages.push(image);
+                                }
+                            });
+                            
                             //Get DOM elements
                             const container = document.querySelector('.options-grid');
                             const hiddenSelect = document.querySelector('select[name="master_image"]'); // Will remove this later
@@ -547,31 +679,18 @@
                             container.innerHTML = '';
                             if (hiddenSelect) hiddenSelect.innerHTML = ''; // Temporary cleanup
                             
-                            data.images.forEach(image => {
-                                // var option = document.createElement('option');
-                                // option.value = image.full_name;
-                                // option.textContent = image.full_name; // Restore original display, show full image name
-                                // select.appendChild(option);
-
+                            // Function to create image card
+                            function createImageCard(image, isPrivate = false) {
                                 const card = document.createElement('div');
                                 card.className = 'option-card';
 
                                 let fullName = image.full_name;
-                                arr = fullName.split('/');
-                                let registry;
                                 const name = image.display_name;
-                                registry = arr[0];
 
-                                let status = "Public";
-                                let bc = "#1967d216";
-                                let tc = "#1967d2";
+                                let status = isPrivate ? "Private" : "Public";
+                                let bc = isPrivate ? "rgba(198, 40, 40, 0.05)" : "#1967d216";
+                                let tc = isPrivate ? "#c62828" : "#1967d2";
 
-                                if (registry.substr(registry.length - 1) === "1") {
-                                    status = "Private";
-                                    bc = "rgba(198, 40, 40, 0.05)"
-                                    tc = "#c62828";
-                                }
-                                console.log(registry, name);
                                 /**-------------------------
                                  * innerHTML for card content
                                 -------------------------*/
@@ -603,31 +722,118 @@
                                     handleImageChange();
                                 });
 
-                                container.appendChild(card);
+                                return card;
+                            }
+                            
+                            // Create tab structure
+                            const tabsHTML = `
+                                <div class="image-tabs">
+                                    <button class="image-tab active" data-tab="public">
+                                        Public${publicImages.length > 0 ? ` (${publicImages.length})` : ''}
+                                    </button>
+                                    <button class="image-tab" data-tab="private">
+                                        Private${privateImages.length > 0 ? ` (${privateImages.length})` : ''}
+                                    </button>
+                                </div>
+                                <div class="tab-content active" id="public-tab-content">
+                                    <div class="options-grid" id="public-options-grid"></div>
+                                </div>
+                                <div class="tab-content" id="private-tab-content">
+                                    <div class="options-grid" id="private-options-grid"></div>
+                                </div>
+                            `;
+                            
+                            container.innerHTML = tabsHTML;
+                            
+                            // Get tab content containers
+                            const publicGrid = document.getElementById('public-options-grid');
+                            const privateGrid = document.getElementById('private-options-grid');
+                            
+                            // Add public images
+                            if (publicImages.length > 0) {
+                                publicImages.forEach(image => {
+                                    const card = createImageCard(image, false);
+                                    publicGrid.appendChild(card);
 
-                                //Hidden option
-                                if (hiddenSelect) {
-                                    const option = document.createElement('option');
-                                    option.value = image.full_name;
-                                    option.textContent = image.full_name;
-                                    hiddenSelect.appendChild(option);
-                                }
+                                    //Hidden option for compatibility
+                                    if (hiddenSelect) {
+                                        const option = document.createElement('option');
+                                        option.value = image.full_name;
+                                        option.textContent = image.full_name;
+                                        hiddenSelect.appendChild(option);
+                                    }
+                                });
+                            } else {
+                                publicGrid.innerHTML = '<p class="has-text-grey">No public images available</p>';
+                            }
+                            
+                            // Add private images
+                            if (privateImages.length > 0) {
+                                privateImages.forEach(image => {
+                                    const card = createImageCard(image, true);
+                                    privateGrid.appendChild(card);
+
+                                    //Hidden option for compatibility
+                                    if (hiddenSelect) {
+                                        const option = document.createElement('option');
+                                        option.value = image.full_name;
+                                        option.textContent = image.full_name;
+                                        hiddenSelect.appendChild(option);
+                                    }
+                                });
+                            } else {
+                                privateGrid.innerHTML = '<p class="has-text-grey">No private images available</p>';
+                            }
+                            
+                            // Add tab switching functionality
+                            const tabs = container.querySelectorAll('.image-tab');
+                            const tabContents = container.querySelectorAll('.tab-content');
+                            
+                            tabs.forEach(tab => {
+                                tab.addEventListener('click', () => {
+                                    // Remove active class from all tabs and contents
+                                    tabs.forEach(t => t.classList.remove('active'));
+                                    tabContents.forEach(tc => tc.classList.remove('active'));
+                                    
+                                    // Add active class to clicked tab
+                                    tab.classList.add('active');
+                                    
+                                    // Show corresponding content
+                                    const targetTab = tab.dataset.tab;
+                                    const targetContent = document.getElementById(`${targetTab}-tab-content`);
+                                    if (targetContent) {
+                                        targetContent.classList.add('active');
+                                    }
+                                });
                             });
                             
                             // Check if image is pre-selected
                             if (window.selectedImageFromUrl) {
                                 // Find with matching value
-                                const preselectedCard = Array.from(container.children).find(card =>
-                                    card.dataset.value === window.selectedImageFromUrl
-                                );
+                                const preselectedCard = Array.from(container.querySelectorAll('.option-card')).find(card => {
+                                    const cardImage = [...publicImages, ...privateImages].find(img => 
+                                        img.full_name === window.selectedImageFromUrl
+                                    );
+                                    return cardImage && card.querySelector('.option-title').textContent === cardImage.display_name;
+                                });
                                 if (preselectedCard) {
+                                    // Switch to appropriate tab if needed
+                                    const isInPrivateTab = privateGrid.contains(preselectedCard);
+                                    if (isInPrivateTab) {
+                                        // Switch to private tab
+                                        tabs.forEach(t => t.classList.remove('active'));
+                                        tabContents.forEach(tc => tc.classList.remove('active'));
+                                        document.querySelector('[data-tab="private"]').classList.add('active');
+                                        document.getElementById('private-tab-content').classList.add('active');
+                                    }
                                     preselectedCard.click(); // Trigger selection
                                 }
                             }
                             
-                            // Set default selection if none exists
-                            if (!hiddenSelect.value && container.children.length > 0) {
-                                container.children[0].click();
+                            // Set default selection if none exists - prefer public images first
+                            const allCards = container.querySelectorAll('.option-card');
+                            if (!hiddenSelect.value && allCards.length > 0) {
+                                allCards[0].click();
                             }
                         })
                         .catch(error => {
