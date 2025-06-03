@@ -910,13 +910,9 @@
                     const selectedRegions = Array.from(selectedButtons).map(button => button.dataset.region);
                     document.getElementById('selected-region-input').value = JSON.stringify(selectedRegions);
 
-                    // Show GPU type selection if at least one region is selected
-                    if (selectedRegions.length > 0) {
-                        document.getElementById('gpu-type-selection').style.display = 'block';
-                        renderGPUTypeSelection();
-                    } else {
-                        document.getElementById('gpu-type-selection').style.display = 'none';
-                    }
+                    // Always show all GPU types.
+                    document.getElementById('gpu-type-selection').style.display = 'block';
+                    renderGPUTypeSelection();
                 }
                 
 
@@ -946,14 +942,9 @@
                 function renderGPUTypeSelection() {
                     const gpuContainer = document.getElementById('gpu-options-container');
                     gpuContainer.innerHTML = '';
-
-                    // Get the selected regions
                     
                     // Get the selected regions
                     const selectedRegions = JSON.parse(document.getElementById('selected-region-input').value || '[]');
-                    if (!selectedRegions.length) {
-                        return; // If no regions selected, don't display GPU options
-                    }
 
                     // Create container for GPU buttons
                     gpuContainer.classList.add('is-flex', 'is-flex-wrap-wrap');
@@ -1018,12 +1009,8 @@
                         gpuContainer.appendChild(gpuButton);
                     }
 
-                    // if gpuContainer is empty, hide the section
-                    if (gpuContainer.children.length == 0) {
-                        gpuContainer.style.display = 'none';
-                    } else {
-                        gpuContainer.style.display = 'block';
-                    }
+                    // Always show the GPU type selection section
+                    gpuContainer.style.display = 'block';
                 }
 
                 
