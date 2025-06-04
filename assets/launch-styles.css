@@ -1,5 +1,303 @@
 /* Launch page specific styles */
 
+/*------------------------------------
+Base styles and typography
+-------------------------------------*/
+body {
+    font-family: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    color: #333;
+    line-height: 1.5;
+}
+
+/*------------------------------------
+Resource matching analysis styles
+-------------------------------------*/
+.match-status {
+    display: inline-flex;
+    align-items: center;
+    font-weight: 500;
+    margin-left: 2px;
+    margin-right: 2px;
+    padding: 0 3px;
+    border-radius: 3px;
+    font-size: 0.7rem;
+    white-space: nowrap;
+    vertical-align: text-top;
+    line-height: 1.2;
+    position: relative;
+    top: -6px;
+    right: -1px;
+}
+
+/*------------------------------------
+Tooltip styles
+-------------------------------------*/
+[data-tooltip] {
+    position: relative;
+    cursor: help;
+}
+
+[data-tooltip]::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(51, 51, 51, 0.95);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 3px;
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
+    z-index: 100;
+    pointer-events: none;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+    letter-spacing: 0.2px;
+    text-transform: capitalize;
+    font-family: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+[data-tooltip]:hover::after {
+    opacity: 1;
+    visibility: visible;
+}
+
+/*------------------------------------
+Status icon styles
+-------------------------------------*/
+.status-icons-container {
+    width: 14px;
+    height: 14px;
+    display: inline-block;
+    position: relative;
+    vertical-align: middle;
+    margin: 0 2px;
+}
+
+.match-status {
+    display: none; /* Hidden by default */
+    position: absolute;
+    left: 0;
+    top: 0;
+}
+
+.match-status i {
+    font-size: 11px;
+    line-height: 1;
+    text-transform: capitalize;
+}
+
+.match-status.good i {
+    color: #38a169;
+}
+
+.match-status.poor i {
+    color: #e53e3e;
+}
+
+/*------------------------------------
+Image selection styles
+-------------------------------------*/
+.select-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 7px 11px 7px 11px;
+    border: 1px solid #dbdbdb;
+    background-color: #fff;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.image-options {
+    position: absolute;
+    z-index: 1000;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #dbdbdb;
+    border-radius: 4px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    padding: 8px;
+    max-height: 350px;
+    overflow-y: auto;
+    margin-top: 8px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: opacity 0.2s, transform 0.2s, visibility 0.2s;
+}
+
+.image-options.visible {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.control {
+    position: relative;
+}
+
+.options-grid {
+    display: flex;
+    flex-direction: column;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 4px;
+}
+
+.option-card {
+    padding: 10px;
+    border: 1px solid #eee;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+    margin-bottom: 2px;
+}
+
+.option-card:hover {
+    transition: 0.3s ease;
+    background-color: #f5f5f5;
+}
+
+.option-title {
+    font-weight: bold;
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+.card-header {
+    display: flex;
+    flex-direction: row;
+    gap: 6px;
+    border-radius: 0;
+    box-shadow: none;
+    margin-bottom: 4px;
+    align-items: center;
+}
+
+.tag {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    line-height: 1.2;
+}
+
+/*------------------------------------
+Section header styles
+-------------------------------------*/
+.section-header {
+    margin: 16px 0 12px 0;
+    padding: 0;
+}
+
+.section-header:first-child {
+    margin-top: 0;
+}
+
+.section-header .section-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #4a4a4a;
+    margin: 0 0 8px 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.section-divider {
+    height: 1px;
+    background-color: #e0e0e0;
+    margin-bottom: 12px;
+}
+
+/*------------------------------------
+Image tab styles
+-------------------------------------*/
+.image-tabs {
+    display: flex;
+    border-bottom: 1px solid #dbdbdb;
+    margin-bottom: 8px;
+}
+
+.image-tab {
+    padding: 8px 12px;
+    cursor: pointer;
+    border: none;
+    background: none;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #666;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s ease;
+    flex: 1;
+    text-align: center;
+}
+
+.image-tab:hover {
+    color: #333;
+    background-color: #f9f9f9;
+}
+
+.image-tab.active {
+    color: #1967d2;
+    border-bottom-color: #1967d2;
+    background-color: #f8fbff;
+}
+
+/* Private tab specific styles */
+.image-tab[data-tab="private"]:hover {
+    color: #c62828;
+    background-color: rgb(255, 245, 247);
+}
+
+.image-tab[data-tab="private"].active {
+    color: #c62828;
+    border-bottom-color: #c62828;
+}
+
+/* Public tab specific styles */
+.image-tab[data-tab="public"]:hover {
+    color: #1967d2;
+    background-color: rgb(241, 247, 254);
+}
+
+.image-tab[data-tab="public"].active {
+    color: #1967d2;
+    border-bottom-color: #1967d2;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+.tab-content .options-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+/*------------------------------------
+Description and metadata styles
+-------------------------------------*/
+.option-card p {
+    font-size: 0.8rem;
+    line-height: 1.2;
+    margin: 0;
+    color: #666;
+}
+
+.metadata-repo-link i {
+    font-size: 0.9rem;
+}
+
 .gpu-option {
     margin-right: 10px;
     margin-bottom: 10px;
