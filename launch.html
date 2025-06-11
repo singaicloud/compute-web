@@ -18,174 +18,6 @@
     <!-- Launch page specific styles -->
     <link href="assets/launch-styles.css" rel="stylesheet">
     
-    <style>
-        /* Shared styles */
-        body {
-            font-family: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            color: #333;
-            line-height: 1.5;
-        }
-        
-        /* Image metadata display styles */
-        #image-metadata-container {
-            background-color: #f9f9fc;
-            border-radius: 6px;
-            border: 1px solid #e2e8f0;
-            margin-top: 16px;
-            padding: 20px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.03);
-            transition: all 0.3s ease;
-        }
-        
-        pre.metadata-text {
-            font-family: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
-            background: none;
-            padding: 0;
-            margin: 0;
-            font-size: 0.95rem;
-            line-height: 1.6;
-            color: #3c4257;
-            white-space: pre-wrap;
-        }
-        
-        pre.metadata-text strong {
-            color: #2563eb;
-            font-weight: 600;
-        }
-        
-        /* Enhanced first line (title) display effect */
-        pre.metadata-text::first-line {
-            font-size: 1.25rem;
-            font-weight: 600;
-            color: #1a202c;
-        }
-        
-        /* Add some spacing to each section */
-        pre.metadata-text {
-            display: grid;
-            grid-row-gap: 4px;
-        }
-
-        /* Add more detailed style control */
-        .metadata-item {
-            margin-bottom: 6px;
-            display: flex;
-            align-items: baseline;
-        }
-        .metadata-label {
-            font-weight: 500;
-            color: #4a5568;
-            width: 200px;
-            flex-shrink: 0;
-        }
-        .metadata-value {
-            color: #2d3748;
-        }
-        .metadata-title {
-            font-size: 1.25rem;
-            font-weight: 600;
-            color: #1a202c;
-            margin-bottom: 12px;
-        }
-        .metadata-scenarios span {
-            display: inline-block;
-            background-color: #ebf4ff;
-            color: #3182ce;
-            padding: 0px 8px;
-            border-radius: 4px;
-            margin-right: 6px;
-            margin-bottom: 4px;
-            font-size: 0.85rem;
-        }
-
-        /* Resource matching analysis styles */
-        .match-status {
-            display: inline-flex;
-            align-items: center;
-            font-weight: 500;
-            margin-left: 2px;
-            margin-right: 2px;
-            padding: 0 3px;
-            border-radius: 3px;
-            font-size: 0.7rem;
-            white-space: nowrap;
-            vertical-align: text-top;
-            line-height: 1.2;
-            position: relative;
-            top: -6px;
-            right: -1px;
-        }
-
-        /* Custom tooltip styles */
-        [data-tooltip] {
-            position: relative;
-            cursor: help;
-        }
-
-        [data-tooltip]::after {
-            content: attr(data-tooltip);
-            position: absolute;
-            bottom: 125%;
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: rgba(51, 51, 51, 0.95);
-            color: white;
-            padding: 5px 10px;
-            border-radius: 3px;
-            font-size: 12px;
-            font-weight: 500;
-            white-space: nowrap;
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.2s ease;
-            z-index: 100;
-            pointer-events: none;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.15);
-            letter-spacing: 0.2px;
-            text-transform: capitalize; /* Ensure first letter capitalization */
-            font-family: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-        }
-
-        [data-tooltip]:hover::after {
-            opacity: 1;
-            visibility: visible;
-        }
-
-        /* Status icon container styles */
-        .status-icons-container {
-            width: 14px;
-            height: 14px;
-            display: inline-block;
-            position: relative;
-            vertical-align: middle;
-            margin: 0 2px;
-        }
-
-        /* Match status styles */
-        .match-status {
-            display: none; /* Hidden by default */
-            position: absolute;
-            left: 0;
-            top: 0;
-        }
-
-        /* Icon styles */
-        .match-status i {
-            font-size: 11px;
-            line-height: 1;
-            text-transform: capitalize;
-        }
-
-        /* Icon colors */
-        .match-status.good i {
-            color: #38a169;
-        }
-
-        .match-status.poor i {
-            color: #e53e3e;
-        }
-    </style>
-    
     <!-- Font -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -193,7 +25,7 @@
     <script src="https://kit.fontawesome.com/99d5980073.js" crossorigin="anonymous"></script>
 
     <!-- Markdown parser -->
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/showdown/dist/showdown.min.js"></script>
 </head>
 <body>
     <sing-navigation></sing-navigation>
@@ -201,12 +33,13 @@
     <section class="section form"> 
         <script>
             document.addEventListener('DOMContentLoaded', function(){
-                // Set marked parsing options
-                marked.setOptions({
-                    gfm: true,
-                    breaks: true,
+                // Initialize Showdown converter with options
+                window.converter = new showdown.Converter({
+                    ghCompatible: true,
+                    simpleLineBreaks: true,
                     sanitize: false,
-                    smartLists: true
+                    openLinksInNewWindow: true,
+                    smartIndentationFix: true
                 });
                 
                 // Get metadata container, ensure it's hidden initially
@@ -228,17 +61,7 @@
                 
                 // Get friendly model name display
                 function getDisplayModelName(imageName) {
-                    // Special case handling
-                    if (imageName === 'codellama-7b') return 'CodeLlama-7B';
-                    if (imageName === 'deepseek-7b-v1') return 'DeepSeek-7B-v1';
-                    if (imageName === 'deepseek-7b') return 'DeepSeek-7B';
-                    if (imageName === 'llama2-7b') return 'Llama2-7B';
-                    if (imageName === 'qwen-7b') return 'Qwen-7B';
-                    if (imageName === 'nginx') return 'Nginx';
-                    if (imageName === 'ollama-base') return 'Ollama-base';
-                    if (imageName === 'pytorch-dist-mnist-test') return 'PyTorch-dist-mnist-test';
-                    if (imageName === 'pytorch-env-without-job-ssh') return 'PyTorch-env-without-job-ssh';
-                    
+
                     // For other names, perform general formatting
                     return imageName.split('-').map(part => {
                         // Handle number suffixes, like 7b to 7B
@@ -250,14 +73,58 @@
                     }).join('-');
                 }
                 
+                function getNameWithLatestVersion(imageName) {
+                    arr = imageName.split('/');
+                    let name;
+                    name = (arr.length == 3) ? arr[2] : arr[1];
+                    return name[0].toUpperCase() + name.slice(1).toLowerCase();
+                }
+
                 // Add function to display image metadata
                 function handleImageChange() {
-                    const selectedImage = document.querySelector('select[name="master_image"]').value;
+                    // const selectedImage = document.querySelector('select[name="master_image"]').value;
+                    const selectedImage = document.getElementById('master_image').value;
                     const metadataContent = document.getElementById('image-metadata-content');
                     const metadataContainer = document.getElementById('image-metadata-container');
                     const commandInput = document.querySelector('input[name="command"]');
                     const portInput = document.querySelector('.exposed-port'); 
                     const statusIconsContainer = document.getElementById('status-icons-container');
+                    
+                    const gpuButtons = document.querySelectorAll('.gpu-option.is-selected');
+                    gpuButtons.forEach(button => {
+                        button.classList.remove('is-primary', 'is-selected');
+                    });
+                    
+                    const nodeOptions = document.querySelectorAll('.gpu-node-option.is-selected');
+                    nodeOptions.forEach(button => {
+                        button.classList.remove('is-primary', 'is-selected');
+                    });
+                    
+                    document.getElementById('gpu-type-input').value = '';
+                    document.getElementById('gpu-name-input').value = '';
+                    document.getElementById('num-gpu-per-node-select').value = '-1';
+                    document.getElementById('num-node-input').value = '0';
+                    
+                    const gpuNodeSection = document.getElementById('gpu-node-section');
+                    if (gpuNodeSection) {
+                        gpuNodeSection.style.display = 'none';
+                    }
+                    
+                    const resourcePreview = document.getElementById('resource-allocation-preview');
+                    if (resourcePreview) {
+                        resourcePreview.style.display = 'none';
+                    }
+                    
+                    const matchStatusGoodElement = document.getElementById('match-status-good');
+                    const matchStatusPoorElement = document.getElementById('match-status-poor');
+                    if(matchStatusGoodElement) matchStatusGoodElement.style.display = 'none';
+                    if(matchStatusPoorElement) matchStatusPoorElement.style.display = 'none';
+                    if(statusIconsContainer) statusIconsContainer.style.display = 'none';
+                    
+                    const nodeOptionsContainer = document.getElementById('gpu-node-options');
+                    if (nodeOptionsContainer) {
+                        nodeOptionsContainer.innerHTML = '';
+                    }
                     
                     // If no image is selected, hide all content and return
                     if (!selectedImage) {
@@ -265,13 +132,6 @@
                         if (metadataContainer) metadataContainer.style.display = 'none';
                         if (commandInput) commandInput.value = '';
                         if (portInput) portInput.value = ''; 
-                        
-                        // Hide resource matching status icons
-                        const matchStatusGoodElement = document.getElementById('match-status-good');
-                        const matchStatusPoorElement = document.getElementById('match-status-poor');
-                        if(matchStatusGoodElement) matchStatusGoodElement.style.display = 'none';
-                        if(matchStatusPoorElement) matchStatusPoorElement.style.display = 'none';
-                        if(statusIconsContainer) statusIconsContainer.style.display = 'none';
                         
                         return;
                     }
@@ -295,6 +155,11 @@
                         return;
                     }
                     
+                    const triggerDisplay = document.querySelector('.select-header-name');
+                    if (selectedImageObj && triggerDisplay) {
+                        triggerDisplay.textContent = getNameWithLatestVersion(selectedImage);
+                    }
+
                     // Found the image, process image information
                     // Image name display style
                     const displayName = getDisplayModelName(selectedImageObj.name);
@@ -315,51 +180,88 @@
                         portInput.value = '';
                     }
                     
+                    // Set default environment variables
+                    if (selectedImageObj.default_env_vars && Array.isArray(selectedImageObj.default_env_vars) && selectedImageObj.default_env_vars.length > 0) {
+                        const envVarContainer = document.querySelector('.env-var-container');
+                        while (envVarContainer.children.length > 1) {
+                            envVarContainer.removeChild(envVarContainer.lastChild);
+                        }
+                        
+                        // Set first env var
+                        const firstEnvVar = selectedImageObj.default_env_vars[0];
+                        const firstEnvVarEl = envVarContainer.querySelector('.env-var');
+                        const nameInput = firstEnvVarEl.querySelector('input[name="env_name"]');
+                        const valueInput = firstEnvVarEl.querySelector('input[name="env_value"]');
+                        
+                        if (nameInput && valueInput) {
+                            nameInput.value = firstEnvVar.name || '';
+                            valueInput.value = firstEnvVar.value || '';
+                        }
+                        
+                        // Add remaining env vars
+                        for (let i = 1; i < selectedImageObj.default_env_vars.length; i++) {
+                            const envVar = selectedImageObj.default_env_vars[i];
+                            const newRow = document.createElement('div');
+                            newRow.classList.add('field', 'is-grouped', 'env-var');
+                            newRow.innerHTML = `
+                                <div class="control is-expanded">
+                                    <input class="input" type="text" name="env_name" placeholder="Variable name" value="${envVar.name || ''}">
+                                </div>
+                                <div class="control is-expanded">
+                                    <input class="input" type="text" name="env_value" placeholder="Value" value="${envVar.value || ''}">
+                                </div>
+                                <div class="control">
+                                    <button class="button is-danger remove_env_var"> × </button>
+                                </div>
+                            `;
+                            envVarContainer.appendChild(newRow);
+                            
+                            // Add event listener for remove button
+                            const removeBtn = newRow.querySelector('.remove_env_var');
+                            if (removeBtn) {
+                                removeBtn.addEventListener('click', function() {
+                                    envVarContainer.removeChild(newRow);
+                                });
+                            }
+                        }
+                    } else {
+                        // Clear all env var inputs
+                        const envVarInputs = document.querySelectorAll('.env-var input');
+                        envVarInputs.forEach(input => {
+                            input.value = '';
+                        });
+                    }
+                    
                     // Build metadata HTML
-                    let metadataHTML = `
-                        <div class="metadata-title">${displayName}</div>`;
+                    let metadataHTML = `<div class="metadata-title">
+                        ${displayName}
+                        ${selectedImageObj.github_repo ? 
+                            `<a href="${selectedImageObj.github_repo}" target="_blank" class="metadata-repo-link">
+                                <i class="fa-brands fa-github"></i>
+                            </a>` : 
+                            ''}
+                    </div>`;
                     
-                    // Add description (if exists)
+                    // Add description with Markdown support (if exists)
                     if (selectedImageObj.description) {
+                        const descriptionHtml = window.converter.makeHtml(selectedImageObj.description);
                         metadataHTML += `
                         <div class="metadata-item">
-                            <div class="metadata-label">Description:</div>
-                            <div class="metadata-value">${selectedImageObj.description}</div>
-                        </div>`;
-                    }
-                    
-                    // Add applicable scenarios (if exists)
-                    if (selectedImageObj.applicable_scenarios) {
-                        metadataHTML += `
-                        <div class="metadata-item">
-                            <div class="metadata-label">Applicable scenarios:</div>
-                            <div class="metadata-value">${selectedImageObj.applicable_scenarios}</div>
-                        </div>`;
-                    }
-                    
-                    // Add recommended configuration (if exists)
-                    if (selectedImageObj.recommended_configuration) {
-                        metadataHTML += `
-                        <div class="metadata-item">
-                            <div class="metadata-label">Recommended configuration:</div>
-                            <div class="metadata-value">${selectedImageObj.recommended_configuration}</div>
-                        </div>`;
-                    }
-                    
-                    // Add GitHub repository link (if exists)
-                    if (selectedImageObj.github_repo) {
-                        metadataHTML += `
-                        <div class="metadata-item">
-                            <div class="metadata-label">Source file link:</div>
-                            <div class="metadata-value">
-                                <a href="${selectedImageObj.github_repo}" target="_blank">${selectedImageObj.github_repo}</a>
-                            </div>
+                            <div class="metadata-content">${descriptionHtml}</div>
                         </div>`;
                     }
                     
                     // Update metadata content and display
-                    metadataContent.innerHTML = metadataHTML;
-                    metadataContainer.style.display = 'block';
+                    // metadataContent.innerHTML = metadataHTML;
+                    // metadataContainer.style.display = 'block';
+
+                    if (!selectedImageObj.description) {
+                        metadataContainer.style.display = "none";
+                    } else {
+                        metadataContent.innerHTML = metadataHTML;
+                        metadataContainer.style.display = 'block';
+
+                    }
                     
                     // Get current selected GPU information
                     const gpuTypeInput = document.getElementById('gpu-type-input');
@@ -393,66 +295,6 @@
                     }
                 }
 
-                // Check resource matching status
-                function updateResourceMatchingStatus(selectedImageObj, gpuType, gpuCount) {
-                    // Get match status elements
-                    const matchStatusGoodElement = document.getElementById('match-status-good');
-                    const matchStatusPoorElement = document.getElementById('match-status-poor');
-                    const statusIconsContainer = document.getElementById('status-icons-container');
-                    
-                    // Hide match status by default
-                    if(matchStatusGoodElement) matchStatusGoodElement.style.display = 'none';
-                    if(matchStatusPoorElement) matchStatusPoorElement.style.display = 'none';
-
-                    // Check if the image has a valid minimum_gpu_memory property
-                    if(!selectedImageObj || !selectedImageObj.minimum_gpu_memory || selectedImageObj.minimum_gpu_memory.toString().trim() === ''){
-                        // Hide matching status icons
-                        if(statusIconsContainer){
-                            statusIconsContainer.style.display = 'none';
-                        }
-                        return;
-                    }
-
-                    // Show matching status icons   
-                    if(statusIconsContainer){
-                        statusIconsContainer.style.display = 'inline-block';
-                    }
-
-                    // Get minimum GPU memory requirement
-                    let gpuMemoryGb = 0;
-                    if(window.gpuInfo){
-                        for(const nodeKey in window.gpuInfo){
-                            if(window.gpuInfo[nodeKey].gpu_sku === gpuType){
-                                gpuMemoryGb = window.gpuInfo[nodeKey].gpu_memory_gb;
-                                break;
-                            }
-                        }
-                    }
-
-                    // Calculate total GPU memory
-                    const totalMemoryGb = gpuMemoryGb * gpuCount;
-
-                    // Get image's minimum GPU memory requirement by the image
-                    let minimumGpuMemory = 0;
-                    if(selectedImageObj.minimum_gpu_memory){
-                        if(!isNaN(selectedImageObj.minimum_gpu_memory)){
-                            minimumGpuMemory = parseInt(selectedImageObj.minimum_gpu_memory);
-                        } else if(typeof selectedImageObj.minimum_gpu_memory === 'string'){
-                            const memoryMatch = selectedImageObj.minimum_gpu_memory.match(/(\d+)/);
-                            if(memoryMatch){
-                                minimumGpuMemory = parseInt(memoryMatch[1]);
-                            }
-                        }
-                    }
-
-                    if(minimumGpuMemory > 0){
-                        if(totalMemoryGb >= minimumGpuMemory){
-                            if(matchStatusGoodElement) matchStatusGoodElement.style.display = 'inline-flex';
-                        }else{
-                            if(matchStatusPoorElement) matchStatusPoorElement.style.display = 'inline-flex';
-                        }
-                    }   
-                }
                 
                 // Process URL parameters to prefill image name, entrypoint and ports
                 function processUrlParameters() {
@@ -511,321 +353,374 @@
                             // Enhance images with metadata
                             enhanceImagesWithMetadata(data.images);
                             
-                            var select = document.querySelector('select[name="master_image"]');
-                            select.innerHTML = "";
+                            // Filter out images with FAILED status
+                            const filteredImages = data.images.filter(image => {
+                                return !image.status || !image.status.startsWith('FAILED');
+                            });
                             
-                            data.images.forEach(image => {
-                                var option = document.createElement('option');
-                                option.value = image.full_name;
-                                option.textContent = image.full_name; // Restore original display, show full image name
-                                select.appendChild(option);
+                            // Categorize images into public and private
+                            const publicImages = [];
+                            const privateImages = [];
+                            
+                            filteredImages.forEach(image => {
+                                const fullName = image.full_name;
+                                const arr = fullName.split('/');
+                                const registry = arr[0];
+                                
+                                // Check if it's a private registry (ends with "1")
+                                if (registry.substr(registry.length - 1) === "1") {
+                                    privateImages.push(image);
+                                } else {
+                                    publicImages.push(image);
+                                }
+                            });
+                            
+                            //Get DOM elements
+                            const container = document.querySelector('.options-grid');
+                            const masterImageInput = document.getElementById('master_image');
+
+                            container.innerHTML = '';
+                            
+                            // Function to create image card
+                            function createImageCard(image, isPrivate = false) {
+                                const card = document.createElement('div');
+                                card.className = 'option-card';
+
+                                let fullName = image.full_name;
+                                const name = image.display_name;
+
+                                let status = isPrivate ? "Private" : "Public";
+                                let bc = isPrivate ? "rgba(198, 40, 40, 0.05)" : "#1967d216";
+                                let tc = isPrivate ? "#c62828" : "#1967d2";
+
+                                /**-------------------------
+                                 * innerHTML for card content
+                                -------------------------*/
+                                card.innerHTML = `
+                                    <div class = "card-header"> 
+                                    <div class = "tag" style = "background-color: ${bc}; color: ${tc};">${status}</div>
+                                    <h4 class = "option-title">${name}</h4>
+                                    ${image.github_repo ?
+                                        `<a href="${image.github_repo}" target="_blank" class="metadata-repo-link"  style = "margin: 0;">
+                                    <i class="fa-brands fa-github"></i>
+                                    </a>` :
+                                        ''}
+                                    </div>
+                                    <div class = "card-divider"></div>
+                                    <p>${image.short_description}</p>
+                                `;
+
+                                card.addEventListener('click', () => {
+                                    //remove previous selections
+                                    document.querySelectorAll('.option-card').forEach(c => c.classList.remove('selected'));
+                                    //Mark current card as selected
+                                    card.classList.add('selected');
+
+                                    masterImageInput.value = image.full_name;
+
+                                    const options = document.querySelector('.image-options');
+                                    options.classList.remove('visible');
+
+                                    handleImageChange();
+                                });
+
+                                return card;
+                            }
+                            
+                            // Create tab structure
+                            const tabsHTML = `
+                                <div class="image-tabs">
+                                    <button class="image-tab active" data-tab="public">
+                                        Public${publicImages.length > 0 ? ` (${publicImages.length})` : ''}
+                                    </button>
+                                    <button class="image-tab" data-tab="private">
+                                        Private${privateImages.length > 0 ? ` (${privateImages.length})` : ''}
+                                    </button>
+                                </div>
+                                <div class="tab-content active" id="public-tab-content">
+                                    <div class="options-grid" id="public-options-grid"></div>
+                                </div>
+                                <div class="tab-content" id="private-tab-content">
+                                    <div class="options-grid" id="private-options-grid"></div>
+                                </div>
+                            `;
+                            
+                            container.innerHTML = tabsHTML;
+                            
+                            // Get tab content containers
+                            const publicGrid = document.getElementById('public-options-grid');
+                            const privateGrid = document.getElementById('private-options-grid');
+                            
+                            // Add public images
+                            if (publicImages.length > 0) {
+                                publicImages.forEach(image => {
+                                    const card = createImageCard(image, false);
+                                    publicGrid.appendChild(card);
+                                });
+                            } else {
+                                publicGrid.innerHTML = '<p class="has-text-grey">No public images available</p>';
+                            }
+                            
+                            // Add private images
+                            if (privateImages.length > 0) {
+                                privateImages.forEach(image => {
+                                    const card = createImageCard(image, true);
+                                    privateGrid.appendChild(card);
+                                });
+                            } else {
+                                privateGrid.innerHTML = '<p class="has-text-grey">No private images available</p>';
+                            }
+                            
+                            // Add tab switching functionality
+                            const tabs = container.querySelectorAll('.image-tab');
+                            const tabContents = container.querySelectorAll('.tab-content');
+                            
+                            tabs.forEach(tab => {
+                                tab.addEventListener('click', () => {
+                                    // Remove active class from all tabs and contents
+                                    tabs.forEach(t => t.classList.remove('active'));
+                                    tabContents.forEach(tc => tc.classList.remove('active'));
+                                    
+                                    // Add active class to clicked tab
+                                    tab.classList.add('active');
+                                    
+                                    // Show corresponding content
+                                    const targetTab = tab.dataset.tab;
+                                    const targetContent = document.getElementById(`${targetTab}-tab-content`);
+                                    if (targetContent) {
+                                        targetContent.classList.add('active');
+                                    }
+                                });
                             });
                             
                             // Check if image is pre-selected
                             if (window.selectedImageFromUrl) {
                                 // Find with matching value
-                                const options = select.options;
-                                for (let i = 0; i < options.length; i++) {
-                                    if (options[i].value === window.selectedImageFromUrl) {
-                                        select.selectedIndex = i;
-                                        break;
+                                const preselectedCard = Array.from(container.querySelectorAll('.option-card')).find(card => {
+                                    const cardImage = [...publicImages, ...privateImages].find(img => 
+                                        img.full_name === window.selectedImageFromUrl
+                                    );
+                                    return cardImage && card.querySelector('.option-title').textContent === cardImage.display_name;
+                                });
+                                if (preselectedCard) {
+                                    // Switch to appropriate tab if needed
+                                    const isInPrivateTab = privateGrid.contains(preselectedCard);
+                                    if (isInPrivateTab) {
+                                        // Switch to private tab
+                                        tabs.forEach(t => t.classList.remove('active'));
+                                        tabContents.forEach(tc => tc.classList.remove('active'));
+                                        document.querySelector('[data-tab="private"]').classList.add('active');
+                                        document.getElementById('private-tab-content').classList.add('active');
                                     }
+                                    preselectedCard.click(); // Trigger selection
                                 }
                             }
                             
-                            if (!select.value && select.options.length > 0) {
-                                select.selectedIndex = 0;
+                            // Set default selection if none exists - prefer public images first
+                            const allCards = container.querySelectorAll('.option-card');
+                            if ((!masterImageInput.value || masterImageInput.value === '') && allCards.length > 0) {
+                                allCards[0].click();
                             }
-                            
-                            // Add event listener
-                            select.addEventListener('change', handleImageChange);
-                            
-                            // Immediately trigger selection event to display metadata
-                            handleImageChange();
                         })
                         .catch(error => {
                             console.error("Failed to fetch images:", error);
                         });
                 }
-                
+
+                /**
+                 * Trigger select options
+                 */
+                document.querySelector('.image-select-trigger').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const options = document.querySelector('.image-options');
+                    options.classList.toggle('visible');
+                });
+
+                // Close when clicking outside
+                document.addEventListener('click', function (e) {
+                    const options = document.querySelector('.image-options');
+                    const trigger = document.querySelector('.image-select-trigger');
+
+                    if (!trigger.contains(e.target) && !options.contains(e.target)) {
+                        options.classList.remove('visible');
+                    }
+                });
+
                 // No longer need to enhance image metadata, use data directly from backend API
                 function enhanceImagesWithMetadata(images) {
                     // Function kept for compatibility
                 }
+
+
+                // Add function to display regions
+                function populateRegions() {
+                    const regionContainer = document.getElementById('region-options-container');
+                    
+                    // Clear existing content
+                    regionContainer.innerHTML = '';
+                    
+                    // Check if window.allRegions exists
+                    if (window.allRegions) {
+                        // Create buttons for each region
+                        for (const regionCode in window.allRegions) {
+                            const regionName = window.allRegions[regionCode];
+                            
+                            const regionButton = document.createElement('button');
+                            regionButton.classList.add('button', 'region-option', 'is-primary', 'is-selected', 'mr-2', 'mb-2');
+                            regionButton.dataset.region = regionCode;
+                            regionButton.textContent = regionName;
+                            // Set fixed width and height for consistent button size
+                            regionButton.style.width = '150px';
+                            regionButton.style.height = '40px';
+                            
+                            regionButton.addEventListener('click', function() {
+                                // Toggle selection
+                                this.classList.toggle('is-primary');
+                                this.classList.toggle('is-selected');
+                                
+                                // Update hidden input with all selected regions
+                                updateSelectedRegions();
+                            });
+                            
+                            regionContainer.appendChild(regionButton);
+                        }
+                        
+                        // Update hidden input with all selected regions initially
+                        updateSelectedRegions();
+                    }
+                }
                 
+                // Function to update selected regions
+                function updateSelectedRegions() {
+                    const selectedButtons = document.querySelectorAll('.region-option.is-selected');
+                    const selectedRegions = Array.from(selectedButtons).map(button => button.dataset.region);
+                    document.getElementById('selected-region-input').value = JSON.stringify(selectedRegions);
+
+                    // Always show all GPU types.
+                    document.getElementById('gpu-type-selection').style.display = 'block';
+                    renderGPUTypeSelection();
+                }
+                
+
                 // Fetch available GPU information
                 function fetchGpuInfo() {
                     api.get(`/gpu-info`)
-                        .then(data => {
-                            const gpuContainer = document.getElementById('gpu-options-container');
-                            gpuContainer.innerHTML = '';
-                            
-                            window.gpuInfo = data.gpu_info || {};
-                            
-                            if (data.summary) {
-                                Object.keys(data.summary).forEach(gpuSku => {
-                                    const info = data.summary[gpuSku];
-                                    
-                                    let gpuName = gpuSku;
-                                    let gpuMemoryGb = 0;
-                                    
-                                    for (const nodeKey in data.gpu_info) {
-                                        if (data.gpu_info[nodeKey].gpu_sku === gpuSku) {
-                                            gpuName = data.gpu_info[nodeKey].gpu_name || gpuSku;
-                                            gpuMemoryGb = data.gpu_info[nodeKey].gpu_memory_gb;
-                                            break;
-                                        }
-                                    }
-                                    
-                                    // If no memory info, try to extract from SKU
-                                    if (!gpuMemoryGb) {
-                                        const match = gpuSku.match(/(\d+)G$/);
-                                        if (match) {
-                                            gpuMemoryGb = parseInt(match[1]);
-                                        }
-                                    }
-                                    
-                                    const gpuButton = document.createElement('button');
-                                    gpuButton.classList.add('button', 'gpu-option');
-                                    gpuButton.dataset.type = gpuSku;
-                                    gpuButton.dataset.total = info.total;
-                                    gpuButton.dataset.used = info.used;
-                                    gpuButton.dataset.memory = gpuMemoryGb;
-                                    gpuButton.textContent = `${gpuName} (${info.used}/${info.total})`;
-                                    
-                                    // If no available GPUs, disable button
-                                    const availableCount = info.total - info.used;
-                                    if (availableCount <= 0) {
-                                        gpuButton.disabled = true;
-                                        gpuButton.classList.add('is-light');
-                                        gpuButton.title = "No GPUs available";
-                                    }
-                                    
-                                    gpuButton.addEventListener('click', function() {
-                                        document.querySelectorAll('.gpu-option').forEach(btn => {
-                                            btn.classList.remove('is-primary', 'is-selected');
-                                        });
-                                        this.classList.add('is-primary', 'is-selected');
-                                        document.getElementById('gpu-type-input').value = this.dataset.type;
-                                        
-                                        document.getElementById('gpu-name-input').value = gpuName;
-                                        
-                                        setupGpuNodeOptions(this.dataset.type, parseInt(this.dataset.total), parseInt(this.dataset.used));
-                                    });
-                                    gpuContainer.appendChild(gpuButton);
-                                });
-                                
-                                if (gpuContainer.firstChild) {
-                                    gpuContainer.firstChild.click();
-                                    gpuContainer.firstChild.classList.add('is-selected');
+                    .then(data => {
+                        window.gpuInfo = data.gpu_info || {};
+
+                        const regionDict = {};
+                        if (window.gpuInfo) {
+                            for (const nodeKey in window.gpuInfo) {
+                                const node = window.gpuInfo[nodeKey];
+                                if (node.region && node.region_name) {
+                                    regionDict[node.region] = node.region_name;
                                 }
                             }
-                        })
-                        .catch(error => {
-                            console.error("Failed to fetch GPU info:", error);
-                        });
-                }
-                
-                // Initialize GPU-node combination options
-                function setupGpuNodeOptions(gpuType, totalGPUs, usedGPUs) {
-                    const availableGPUs = Math.max(0, totalGPUs - usedGPUs);
-                    
-                    // Define options based on GPU type
-                    let allOptions = [];
-                    
-                    // Configure options based on GPU type and availability
-                    if (gpuType === 'N309024G') { // RTX3090
-                        allOptions = [
-                            {gpus: 1, nodes: 1, label: '1 GPU × 1 Node', minRequired: 1},
-                            {gpus: 1, nodes: 2, label: '1 GPU × 2 Nodes', minRequired: 2},
-                            {gpus: 1, nodes: 4, label: '1 GPU × 4 Nodes', minRequired: 4},
-                            {gpus: 2, nodes: 2, label: '2 GPUs × 2 Nodes', minRequired: 4}
-                        ];
-                    } else if (gpuType === 'N308010G') { // RTX3080
-                        allOptions = [
-                            {gpus: 1, nodes: 1, label: '1 GPU × 1 Node', minRequired: 1},
-                            {gpus: 1, nodes: 2, label: '1 GPU × 2 Nodes', minRequired: 2}
-                        ];
-                    } else {
-                        // Default options for other GPU types
-                        allOptions = [
-                            {gpus: 1, nodes: 1, label: '1 GPU × 1 Node', minRequired: 1},
-                            {gpus: 1, nodes: 2, label: '1 GPU × 2 Nodes', minRequired: 2}
-                        ];
-                    }
-                    
-                    const container = document.getElementById('gpu-node-options');
-                    container.innerHTML = '';
-                    
-                    let hasEnabledOption = false;
-                    
-                    // Create buttons for each option
-                    allOptions.forEach(option => {
-                        const button = document.createElement('button');
-                        button.classList.add('button', 'gpu-node-option');
-                        button.textContent = option.label;
-                        button.dataset.gpus = option.gpus;
-                        button.dataset.nodes = option.nodes;
-                        
-                        // Calculate total GPUs needed for this option
-                        const requiredGPUs = option.gpus * option.nodes;
-                        
-                        // If required GPUs exceed available, disable button
-                        if (requiredGPUs > availableGPUs) {
-                            button.disabled = true;
-                            button.classList.add('is-light');
-                            button.title = `Requires ${requiredGPUs} GPUs, but only ${availableGPUs} available`;
-                        } else {
-                            hasEnabledOption = true;
-                            button.addEventListener('click', function() {
-                                document.querySelectorAll('.gpu-node-option').forEach(btn => {
-                                    btn.classList.remove('is-primary', 'is-selected');
-                                });
-                                this.classList.add('is-primary', 'is-selected');
-                                document.getElementById('gpu-limit-input').value = this.dataset.gpus;
-                                document.getElementById('node-replicas-input').value = this.dataset.nodes;
-                                
-                                // Update resource allocation preview
-                                updateResourceAllocationPreview(gpuType, option.gpus, option.nodes);
-                            });
                         }
-                        
-                        container.appendChild(button);
+                        window.allRegions = regionDict;
+                    })
+                    .catch(error => {
+                        console.error("Failed to fetch GPU info:", error);
+                    });
+                }
+
+
+                function renderGPUTypeSelection() {
+                    const gpuContainer = document.getElementById('gpu-options-container');
+                    
+                    // Store current GPU selections before updating
+                    const currentSelections = new Set();
+                    document.querySelectorAll('.gpu-option.is-selected').forEach(button => {
+                        currentSelections.add(button.dataset.type);
                     });
                     
-                    // Auto-select first available option
-                    if (hasEnabledOption) {
-                        for (let i = 0; i < container.children.length; i++) {
-                            const button = container.children[i];
-                            if (!button.disabled) {
-                                button.click();
-                                break;
-                            }
-                        }
+                    // Get the selected regions
+                    const selectedRegions = JSON.parse(document.getElementById('selected-region-input').value || '[]');
 
-                        // Check whether the currently selected image and resource match
-                        const selectedImage = document.querySelector('select[name="master_image"]').value;
-                        if(selectedImage){
-                            const selectedImageObj = window.imagesData.images.find(img => img.full_name === selectedImage);
-                            if(selectedImageObj){
-                                // Using variables in the current function
-                                const firstEnabledOption = Array.from(container.children).find(btn => !btn.disabled);
-                                const gpuCount = firstEnabledOption ? parseInt(firstEnabledOption.dataset.gpus) || 1 : 1;
-                                updateResourceMatchingStatus(selectedImageObj, gpuType, gpuCount);
-                            }
-                        }
-                    } else {
-                        // Hide resource preview if no options available
-                        document.getElementById('resource-allocation-preview').style.display = 'none';
-                        document.getElementById('match-status-good').style.display = 'none';
-                        document.getElementById('match-status-poor').style.display = 'none';
-                    }
-                }
-                
-                // Function to update the resource allocation preview
-                function updateResourceAllocationPreview(gpuSku, gpuCount, nodeCount) {
-                    const previewContainer = document.getElementById('resource-allocation-preview');
+                    // Create container for GPU buttons
+                    gpuContainer.classList.add('is-flex', 'is-flex-wrap-wrap');
+
+                    // Filter GPU types based on selected regions
+                    const filteredGpuTypes = {};
                     
-                    // Get selected GPU information
-                    let gpuName = '';
-                    let cpuCoresPerGpu = 0;
-                    let memoryGbPerGpu = 0;
-                    let gpuMemoryGb = 0;
-                    
-                    // Get matching node data from GPU info
+                    // Iterate through all GPU nodes
                     for (const nodeKey in window.gpuInfo) {
                         const node = window.gpuInfo[nodeKey];
-                        if (node.gpu_sku === gpuSku) {
-                            gpuName = node.gpu_name || '';
-                            cpuCoresPerGpu = node.cpu_cores_per_gpu || 0;
-                            memoryGbPerGpu = node.memory_gb_per_gpu || 0;
-                            gpuMemoryGb = node.gpu_memory_gb || 0;
-                            
-                            if (node.total && node.used && (node.total - node.used >= gpuCount * nodeCount)) {
-                                break;
-                            }
-                        }
-                    }
-                    
-                    // Calculate total resources
-                    const totalCpuCores = (cpuCoresPerGpu * gpuCount * nodeCount).toFixed(1);
-                    const totalMemoryGb = (memoryGbPerGpu * gpuCount * nodeCount).toFixed(1);
-                    
-                    // Update preview information
-                    const gpuValueText = `${gpuCount}× ${gpuName} (${gpuMemoryGb}G VRAM)`;
-                    
-                    document.getElementById('preview-gpu-info').textContent = gpuValueText;
-                    document.getElementById('preview-cpu-info').textContent = `${totalCpuCores} cores (automatically assigned)`;
-                    document.getElementById('preview-memory-info').textContent = `${totalMemoryGb}Gi (automatically assigned)`;
-                    
-                    // Show preview container
-                    previewContainer.style.display = 'block';
-                    
-                    // Get current selected image
-                    const selectedImage = document.querySelector('select[name="master_image"]').value;
-                    
-                    // Get match status elements
-                    const matchStatusGoodElement = document.getElementById('match-status-good');
-                    const matchStatusPoorElement = document.getElementById('match-status-poor');
-                    
-                    // Hide match status by default
-                    matchStatusGoodElement.style.display = 'none';
-                    matchStatusPoorElement.style.display = 'none';
-                    
-                    // If no image selected, don't perform resource matching analysis
-                    if (!selectedImage) {
-                        return;
-                    }
-                    
-                    // Find selected image metadata
-                    const selectedImageData = window.imagesData && window.imagesData.images ? 
-                        window.imagesData.images.find(img => img.full_name === selectedImage) : null;
-                    
-                    // If the image does not have the minimum_gpu_memory property, hide matching status
-                    if (!selectedImageData || !selectedImageData.minimum_gpu_memory || selectedImageData.minimum_gpu_memory.toString().trim() === '') {
-                        matchStatusGoodElement.style.display = 'none';
-                        matchStatusPoorElement.style.display = 'none';
 
-                        const statusIconsContainer = document.getElementById('status-icons-container');
-                        if(statusIconsContainer) statusIconsContainer.style.display = 'none';
+                        // Always add this GPU type to the dictionary
+                        if (!filteredGpuTypes[node.gpu_sku]) {
+                            filteredGpuTypes[node.gpu_sku] = {
+                                nodes: [],
+                                gpu_name: node.gpu_name,
+                                gpu_memory_gb: node.gpu_memory_gb,
+                                total: 0,
+                                used: 0
+                            };
+                        }
                         
-                        return;
-                    }else{
-                        // Show matching status icons
-                        const statusIconsContainer = document.getElementById('status-icons-container');
-                        if(statusIconsContainer) statusIconsContainer.style.display = 'inline-block';
-                    }
-                    
-                    // Get image's minimum GPU memory requirement
-                    let minimumGpuMemory = 0;
-                    
-                    if (!isNaN(selectedImageData.minimum_gpu_memory)) {
-                        minimumGpuMemory = parseInt(selectedImageData.minimum_gpu_memory);
-                    } else if (typeof selectedImageData.minimum_gpu_memory === 'string') {
-                        // Try to extract number from string
-                        const memoryMatch = selectedImageData.minimum_gpu_memory.match(/(\d+)/);
-                        if (memoryMatch) {
-                            minimumGpuMemory = parseInt(memoryMatch[1]);
+                        // Check if node's region is in selected regions
+                        if (selectedRegions.includes(node.region)) {
+                            filteredGpuTypes[node.gpu_sku].nodes.push(node);
+                            filteredGpuTypes[node.gpu_sku].total += (node.total || 0);
+                            filteredGpuTypes[node.gpu_sku].used += (node.used || 0);
                         }
                     }
-                    
-                    // If unable to get minimum GPU memory requirement, don't show match analysis
-                    if (minimumGpuMemory <= 0) {
-                        return;
+
+                    // Create or update buttons for each GPU type
+                    for (const gpuType in filteredGpuTypes) {
+                        let gpuButton = document.querySelector(`.gpu-option[data-type="${gpuType}"]`);
+                        const available = Math.max(0, (filteredGpuTypes[gpuType].total || 0) - (filteredGpuTypes[gpuType].used || 0));
+                        
+                        if (!gpuButton) {
+                            // Create new button if it doesn't exist
+                            gpuButton = document.createElement('button');
+                            gpuButton.classList.add('button', 'gpu-option', 'mr-2', 'mb-2');
+                            gpuButton.dataset.type = gpuType;
+                            gpuButton.dataset.name = filteredGpuTypes[gpuType].gpu_name || gpuType;
+                            
+                            // Set fixed width and height for consistent button size
+                            gpuButton.style.width = '150px';
+                            gpuButton.style.height = '40px';
+                            
+                            // Add click event listener
+                            gpuButton.addEventListener('click', function() {
+                                this.classList.toggle('is-primary');
+                                this.classList.toggle('is-selected');
+                                
+                                // Update hidden inputs with selected GPU types
+                                updateSelectedGpuTypes();
+                                
+                                // Setup GPU-node options based on selected GPU types
+                                setupGpuNodeOptionsForMulti();
+                            });
+                            
+                            gpuContainer.appendChild(gpuButton);
+                        }
+                        
+                        // Update button data and text
+                        gpuButton.dataset.total = filteredGpuTypes[gpuType].total || 0;
+                        gpuButton.dataset.used = filteredGpuTypes[gpuType].used || 0;
+                        gpuButton.textContent = `${filteredGpuTypes[gpuType].gpu_name || gpuType} (${available})`;
+                        
+                        // Restore selection state
+                        if (currentSelections.has(gpuType)) {
+                            gpuButton.classList.add('is-primary', 'is-selected');
+                        } else {
+                            gpuButton.classList.remove('is-primary', 'is-selected');
+                        }
                     }
-                    
-                    // Calculate user's total configured GPU memory
-                    const totalGpuMemory = gpuMemoryGb * gpuCount * nodeCount;
-                    
-                    // Based on total GPU memory comparison with minimum requirement, determine match status
-                    if (totalGpuMemory >= minimumGpuMemory) {
-                        // Good match, display Good label
-                        matchStatusGoodElement.style.display = 'inline-flex';
-                    } else {
-                        // Insufficient resources, show Below Requirements label
-                        matchStatusPoorElement.style.display = 'inline-flex';
-                    }
+
+                    // Remove buttons for GPU types that no longer exist
+                    document.querySelectorAll('.gpu-option').forEach(button => {
+                        if (!filteredGpuTypes[button.dataset.type]) {
+                            button.remove();
+                        }
+                    });
+
+                    // Always show the GPU type selection section
+                    gpuContainer.style.display = 'block';
                 }
+
                 
                 // Initialize environment variable functionality
                 document.getElementById('add_env_var').addEventListener('click', function() {
@@ -833,10 +728,10 @@
                     var newEnvVar = document.createElement('div');
                     newEnvVar.classList.add('field', 'is-grouped', 'env-var');
                     newEnvVar.innerHTML = `
-                        <div class="control">
+                        <div class="control is-expanded">
                             <input class="input" type="text" name="env_name" placeholder="Variable name">
                         </div>
-                        <div class="control">
+                        <div class="control is-expanded">
                             <input class="input" type="text" name="env_value" placeholder="Value">
                         </div>
                         <div class="control">
@@ -852,31 +747,58 @@
                 // Form submission
                 document.getElementById('submit').addEventListener('click', function(){
                     const commandValue = document.querySelector('input[name="command"]').value.trim();
+                    const masterImageValue = document.getElementById('master_image').value;
+
+                    if (!masterImageValue || masterImageValue.trim() === '') {
+                        showResultModal('Warning', 'Please select a container image', 'is-warning');
+                        return;
+                    }
+
+                    const selectedRegions = JSON.parse(document.getElementById('selected-region-input').value || '[]');
+                    if (!selectedRegions.length) {
+                        showResultModal('Warning', 'Please select at least one region', 'is-warning');
+                        return;
+                    }
                     
-                    // const useSSH = commandValue.length === 0;
+                    const selectedGpuTypes = JSON.parse(document.getElementById('gpu-type-input').value || '[]');
+                    if (!selectedGpuTypes.length) {
+                        showResultModal('Warning', 'Please select at least one GPU type', 'is-warning');
+                        return;
+                    }
+                    
+                    // Check if GPU node section exists and is visible
+                    const gpuNodeSection = document.getElementById('gpu-node-section');
+                    if (gpuNodeSection && gpuNodeSection.style.display !== 'none') {
+                        // Only validate selection if the section is visible
+                        const numGpuPerNode = parseInt(document.getElementById('num-gpu-per-node-select').value) || 0;
+                        const numNode = parseInt(document.getElementById('num-node-input').value) || 0;
+                        
+                        if (numGpuPerNode < 0 || numNode <= 0) {
+                            showResultModal('Warning', 'Please configure GPU node settings properly', 'is-warning');
+                            return;
+                        }
+                    }
+                    
                     const useSSH = true;
                     const portsInput = document.querySelector('.exposed-port').value.trim();
                     const exposedPorts = portsInput ? 
                         portsInput.split(',').map(port => parseInt(port.trim())).filter(port => !isNaN(port)) : 
                         [];
                     
-                    //if (useSSH && !exposedPorts.includes(22)) {
-                    //    exposedPorts.push(22);
-                    //}
-                    
                     var data = {
                         namespace: document.querySelector('input[name="namespace"]').value || username,
                         job_name: document.querySelector('input[name="job_name"]').value || 'job',
-                        master_image: document.querySelector('select[name="master_image"]').value,
-                        node_replicas: parseInt(document.getElementById('node-replicas-input').value) || 1,
-                        cpu_limit: 1,
-                        memory_limit: '12Gi',
-                        gpu_limit: parseInt(document.getElementById('gpu-limit-input').value) || 0,
+                        master_image: masterImageValue,
+                        num_node: parseInt(document.getElementById('num-node-input').value) || 0,
+                        cpu_limit: 2,
+                        memory_limit: '10Gi',
+                        num_gpu_per_node: parseInt(document.getElementById('num-gpu-per-node-select').value) || 0,
                         commandArray: commandValue ? commandValue.split(/\s+/).map(arg => arg.trim()) : [],
                         env_vars: [],
                         use_ssh: useSSH,
-                        gpu_type: document.getElementById('gpu-type-input').value,
-                        exposed_ports: exposedPorts
+                        gpu_type: selectedGpuTypes,
+                        exposed_ports: exposedPorts,
+                        regions: selectedRegions,
                     };
                     
                     document.querySelectorAll('.env-var').forEach(function(row) {
@@ -907,9 +829,10 @@
                                             <tr><td>Namespace:</td><td>${data.namespace}</td></tr>
                                             <tr><td>Job Name:</td><td>${data.job_name}</td></tr>
                                             <tr><td>Image:</td><td>${data.master_image}</td></tr>
-                                            <tr><td>GPU Type:</td><td>${document.getElementById('gpu-name-input').value || data.gpu_type}</td></tr>
-                                            <tr><td>GPU Count:</td><td>${data.gpu_limit}</td></tr>
-                                            <tr><td>node Count:</td><td>${data.node_replicas}</td></tr>
+                                            <tr><td>GPU Type:</td><td>${document.getElementById('gpu-name-input').value}</td></tr>
+                                            <tr><td>Region:</td><td>${data.regions.map(regionCode => window.allRegions[regionCode] || regionCode).join(', ')}</td></tr>
+                                            <tr><td>GPU Count:</td><td>${data.num_gpu_per_node}</td></tr>
+                                            <tr><td>node Count:</td><td>${data.num_node}</td></tr>
                                             <tr><td>CPU Limit:</td><td>${data.cpu_limit} cores</td></tr>
                                             <tr><td>Memory Limit:</td><td>${data.memory_limit}</td></tr>
                                             <tr><td>Command:</td><td>${data.commandArray.length > 0 ? data.commandArray.join(' ') : 'None (SSH mode)'}</td></tr>
@@ -954,35 +877,71 @@
                     document.querySelector('.confirm-create').addEventListener('click', function() {
                         // Remove confirm dialog
                         document.body.removeChild(confirmModal);
+
+                        console.log('Creating job with data:', data);
                         
                         // Send API request to create job
-                        api.post(`/me/create-job`, data)
+                        api.post(`/me/create-job-multi`, data)
                             .then(result => {
                                 showResultModal('Success', 'Job created successfully!', 'is-success', function() {
                                     window.location.href = '/';
                                 });
                             })
                             .catch(error => {
-                                console.error('Error:', error);
-                                // Extract detailed error information
-                                let errorMessage = 'Failed to create job';
+                                console.error('Error creating job:', error);
                                 
-                                if (error.response) {
-                                    // Server response contains error info
-                                    try {
-                                        const responseData = JSON.parse(error.response);
-                                        errorMessage = responseData.message || responseData.error || JSON.stringify(responseData);
-                                    } catch (e) {
-                                        // If not JSON format, use response text directly
-                                        errorMessage = error.response;
-                                    }
-                                } else if (error.message) {
-                                    // Use error object's message property
+                                let errorMessage = 'Failed to create job';
+                                let errorDetails = '';
+                                
+                                if (error.message) {
                                     errorMessage = error.message;
                                 }
                                 
-                                // Show error modal
-                                showResultModal('Error', errorMessage, 'is-danger');
+                                if (error.details) {
+                                    if (typeof error.details === 'string') {
+                                        try {
+                                            const detailsObj = JSON.parse(error.details);
+                                            
+                                            if (detailsObj.message) {
+                                                errorDetails = detailsObj.message;
+                                            } else if (detailsObj.details && detailsObj.details.causes) {
+                                                const causes = detailsObj.details.causes;
+                                                if (causes && causes.length > 0) {
+                                                    errorDetails = causes.map(cause => 
+                                                        `${cause.field}: ${cause.message}`).join('\n');
+                                                }
+                                            }
+                                        } catch (e) {
+                                            errorDetails = error.details;
+                                        }
+                                    } else if (typeof error.details === 'object') {
+                                        if (error.details.message) {
+                                            errorDetails = error.details.message;
+                                        }
+                                    }
+                                }
+                                
+                                if (!errorDetails && error.response) {
+                                    try {
+                                        const responseData = JSON.parse(error.response);
+                                        if (responseData.message) {
+                                            if (errorMessage === 'Failed to create job') {
+                                                errorMessage = responseData.message;
+                                            } else {
+                                                errorDetails = responseData.message;
+                                            }
+                                        }
+                                    } catch (e) {
+                                        errorDetails = error.response;
+                                    }
+                                }
+                                
+                                let fullErrorMessage = errorMessage;
+                                if (errorDetails && !errorMessage.includes(errorDetails)) {
+                                    fullErrorMessage += `\n\n${errorDetails}`;
+                                }
+                                
+                                showResultModal('Error', fullErrorMessage, 'is-danger');
                             });
                     });
                 });
@@ -993,7 +952,363 @@
                 fetchUserInfo();
                 fetchImages();
                 processUrlParameters();
-            });
+
+                // Check if gpuInfo is already loaded
+                if (window.gpuInfo) {
+                    populateRegions();
+                } else {
+                    // Wait for GPU info to be loaded
+                    const checkGpuInfoInterval = setInterval(function() {
+                        if (window.allRegions) {
+                            clearInterval(checkGpuInfoInterval);
+                            populateRegions();
+                        }
+                    }, 500);
+                }
+            }); // DOMContentLoaded end!!!
+
+
+            // Check resource matching status
+            function updateResourceMatchingStatus(selectedImageObj) {
+                // Get match status elements
+                const matchStatusGoodElement = document.getElementById('match-status-good');
+                const matchStatusPoorElement = document.getElementById('match-status-poor');
+                const statusIconsContainer = document.getElementById('status-icons-container');
+                
+                // Hide match status by default
+                if(matchStatusGoodElement) matchStatusGoodElement.style.display = 'none';
+                if(matchStatusPoorElement) matchStatusPoorElement.style.display = 'none';
+
+                // Check if the image has a valid minimum_gpu_memory property
+                if(!selectedImageObj || !selectedImageObj.minimum_gpu_memory || selectedImageObj.minimum_gpu_memory.toString().trim() === ''){
+                    // Hide matching status icons
+                    if(statusIconsContainer){
+                        statusIconsContainer.style.display = 'none';
+                    }
+                    return;
+                }
+
+                // Show matching status icons   
+                if(statusIconsContainer){
+                    statusIconsContainer.style.display = 'inline-block';
+                }
+
+                // Get image's minimum GPU memory requirement by the image
+                let minimumGpuMemory = 0;
+                if(selectedImageObj.minimum_gpu_memory){
+                    if(!isNaN(selectedImageObj.minimum_gpu_memory)){
+                        minimumGpuMemory = parseInt(selectedImageObj.minimum_gpu_memory);
+                    } else if(typeof selectedImageObj.minimum_gpu_memory === 'string'){
+                        const memoryMatch = selectedImageObj.minimum_gpu_memory.match(/(\d+)/);
+                        if(memoryMatch){
+                            minimumGpuMemory = parseInt(memoryMatch[1]);
+                        }
+                    }
+                }
+
+                // Since we're not checking GPU type and count, we'll just show the requirements
+                if(minimumGpuMemory > 0){
+                    // Show the minimum requirements without comparing to selected resources
+                    if(matchStatusGoodElement) matchStatusGoodElement.style.display = 'inline-flex';
+                }   
+            }
+
+
+            // Function to update hidden inputs with selected GPU types
+            function updateSelectedGpuTypes() {
+                const selectedButtons = document.querySelectorAll('.gpu-option.is-selected');
+                const selectedTypes = Array.from(selectedButtons).map(button => button.dataset.type);
+                const selectedNames = Array.from(selectedButtons).map(button => button.dataset.name);
+                
+                document.getElementById('gpu-type-input').value = JSON.stringify(selectedTypes);
+                document.getElementById('gpu-name-input').value = selectedNames.join(', ');
+                
+                const gpuNodeSection = document.getElementById('gpu-node-section');
+                if (selectedButtons.length > 0) {
+                    gpuNodeSection.style.display = 'block';
+                } else {
+                    gpuNodeSection.style.display = 'none';
+                }
+                updateNodeMaxCount();
+                updateConfiguration();
+            }
+
+
+            // Function to setup GPU-node options based on selected GPU types
+            function setupGpuNodeOptionsForMulti() {
+                const selectedButtons = document.querySelectorAll('.gpu-option.is-selected');
+                const selectedTypes = Array.from(selectedButtons).map(button => button.dataset.type);
+                
+                // Hide GPU node section if no GPUs are selected
+                if (selectedButtons.length === 0) {
+                    const container = document.getElementById('gpu-node-section');
+                    document.getElementById('resource-allocation-preview').style.display = 'none';
+                    container.style.display = 'none';
+                    return;
+                }
+                
+                // Show GPU node section when GPUs are selected
+                document.getElementById('gpu-node-section').style.display = 'block';
+                
+                // Initialize variables for GPU availability tracking
+                let totalAvailableGPUs = 0;
+                let maxGpusPerNode = 0;
+                let minGpusPerNode = Infinity;
+                let hasEnabledOption = false;
+                
+                // Calculate available GPUs from GPU info
+                if(window.gpuInfo) {
+                    for (const nodeKey in window.gpuInfo) {
+                        const node = window.gpuInfo[nodeKey];
+                        if (selectedTypes.includes(node.gpu_sku)) {
+                            const nodeAvailableGPUs = Math.max(0, (node.total || 0) - (node.used || 0));
+                            maxGpusPerNode = Math.max(maxGpusPerNode, nodeAvailableGPUs);
+                            minGpusPerNode = Math.min(minGpusPerNode, nodeAvailableGPUs);
+                        }
+                    }
+                }
+
+                // Handle case where no GPUs are available
+                if (minGpusPerNode === Infinity) {
+                    minGpusPerNode = 0;
+                }
+
+                // Calculate total available GPUs across all selected types
+                selectedButtons.forEach((button, index) => {
+                    const totalGPUs = parseInt(button.dataset.total) || 0;
+                    const usedGPUs = parseInt(button.dataset.used) || 0;
+                    const availableGPUs = Math.max(0, totalGPUs - usedGPUs);
+                    
+                    totalAvailableGPUs += availableGPUs;
+                });
+                
+                // Get references to form elements
+                const gpuSelectElement = document.getElementById('num-gpu-per-node-select');
+                const nodeInput = document.getElementById('num-node-input');
+                
+                // Set up event listeners for GPU and node inputs
+                gpuSelectElement.addEventListener('change', function() {
+                    // Reset node input when GPU selection changes
+                    nodeInput.value = 1;
+                    updateConfiguration();
+                });
+                
+                nodeInput.addEventListener('input', updateConfiguration);
+                
+                // Initialize configuration if GPUs are available
+                if (totalAvailableGPUs > 0) {
+                    hasEnabledOption = true;
+                    updateConfiguration();
+                    
+                    // Update resource matching status based on selected image
+                    const selectedImageInput = document.getElementById('master_image');
+                    if (selectedImageInput && selectedImageInput.value) {
+                        const selectedImageObj = window.imagesData && window.imagesData.images ? 
+                            window.imagesData.images.find(img => img.full_name === selectedImageInput.value) : null;
+                        if (selectedImageObj) {
+                            updateResourceMatchingStatus(selectedImageObj, parseInt(gpuSelectElement.value));
+                        }
+                    }
+                }
+                
+                // Reset resource preview and status indicators
+                const resourcePreview = document.getElementById('resource-allocation-preview');
+                const matchStatusGood = document.getElementById('match-status-good');
+                const matchStatusPoor = document.getElementById('match-status-poor');
+                
+                if (resourcePreview) resourcePreview.style.display = 'none';
+                if (matchStatusGood) matchStatusGood.style.display = 'none';
+                if (matchStatusPoor) matchStatusPoor.style.display = 'none';
+                
+                // Select first available option if any are enabled
+                if (hasEnabledOption) {
+                    const container = document.getElementById('gpu-node-section');
+                    if (container) {
+                        for (let i = 0; i < container.children.length; i++) {
+                            const button = container.children[i];
+                            if (!button.disabled) {
+                                button.click();
+                                break;
+                            }
+                        }
+                        
+                        // Update resource matching status for selected image
+                        const selectedImageInput = document.getElementById('master_image');
+                        if (selectedImageInput && selectedImageInput.value) {
+                            const selectedImageObj = window.imagesData && window.imagesData.images ? 
+                                window.imagesData.images.find(img => img.full_name === selectedImageInput.value) : null;
+                            if (selectedImageObj) {
+                                const firstEnabledOption = Array.from(container.children).find(btn => !btn.disabled);
+                                const gpuCount = firstEnabledOption ? parseInt(firstEnabledOption.dataset.gpus) || 1 : 1;
+                                updateResourceMatchingStatus(selectedImageObj, gpuCount);
+                            }
+                        }
+                    }
+                }
+            }
+
+            function calculateMaxNodes() {
+                const gpuSelectElement = document.getElementById('num-gpu-per-node-select');
+                const gpusPerNode = parseInt(gpuSelectElement.value);
+                
+                // Calculate total available GPUs from selected options
+                const selectedButtons = document.querySelectorAll('.gpu-option.is-selected');
+                let totalAvailableGPUs = 0;
+                
+                selectedButtons.forEach((button) => {
+                    const totalGPUs = parseInt(button.dataset.total) || 0;
+                    const usedGPUs = parseInt(button.dataset.used) || 0;
+                    const availableGPUs = Math.max(0, totalGPUs - usedGPUs);
+                    totalAvailableGPUs += availableGPUs;
+                });
+                
+                // Calculate maximum possible nodes based on available GPUs
+                return gpusPerNode > 0 ? Math.floor(totalAvailableGPUs / gpusPerNode) : 10;
+            }
+
+            function updateNodeMaxCount() {
+                // console.log('updateNodeMaxCount is called');
+                const nodeInput = document.getElementById('num-node-input');
+                const maxNodes = calculateMaxNodes();
+                
+                // Update the max attribute of the input element
+                nodeInput.setAttribute('max', maxNodes);
+                
+                // Adjust node count if it exceeds the new maximum
+                if (parseInt(nodeInput.value) > maxNodes) {
+                    nodeInput.value = maxNodes;
+                }
+                
+                // Validate the input
+                validateNodeInput(nodeInput);
+            }
+
+            function validateNodeInput(input) {
+                // console.log('validateNodeInput is called');
+                const value = parseInt(input.value);
+                const max = parseInt(input.getAttribute('max'));
+                const min = parseInt(input.getAttribute('min'));
+                const gpuLimitWarning = document.getElementById('gpu-limit-warning');
+                const nodeLimitWarning = document.getElementById('node-limit-warning');
+                
+                // Hide all warnings by default
+                gpuLimitWarning.style.display = 'none';
+                nodeLimitWarning.style.display = 'none';
+                
+                // Validate input value against min/max constraints
+                if (isNaN(value) || value < min) {
+                    input.value = min;
+                    nodeLimitWarning.style.display = 'block';
+                } else if (value > max) {
+                    input.value = max;
+                    gpuLimitWarning.style.display = 'block';
+                }
+                
+                // Update configuration based on new input
+                updateConfiguration();
+            }
+
+            function updateConfiguration() {
+                const gpuSelectElement = document.getElementById('num-gpu-per-node-select');
+                const nodeInput = document.getElementById('num-node-input');
+                const gpuLimitWarning = document.getElementById('gpu-limit-warning');
+                const nodeLimitWarning = document.getElementById('node-limit-warning');
+                
+                const gpusPerNode = parseInt(gpuSelectElement.value);
+                let nodeCount = parseInt(nodeInput.value);
+                
+                // Get maximum possible nodes
+                const maxNodes = calculateMaxNodes();
+                
+                // Hide warnings by default
+                gpuLimitWarning.style.display = 'none';
+                nodeLimitWarning.style.display = 'none';
+                
+                // Validate node count and show appropriate warnings
+                if (isNaN(nodeCount) || nodeCount < 1) {
+                    nodeCount = 1;
+                    nodeInput.value = 1;
+                    nodeLimitWarning.style.display = 'block';
+                } else if (nodeCount > maxNodes) {
+                    nodeCount = maxNodes;
+                    nodeInput.value = maxNodes;
+                    gpuLimitWarning.style.display = 'block';
+                }
+                
+                // Update hidden form fields with current configuration
+                const hiddenGpuInput = document.getElementById('num-gpu-per-node-select');
+                if (hiddenGpuInput) {
+                    hiddenGpuInput.value = gpusPerNode;
+                }
+                
+                // No need to update nodeInput again as we already set it above
+                
+                // Update the resource allocation preview
+                updateResourceAllocationPreview(gpusPerNode, nodeCount);
+            }
+            
+
+            // Function to update the resource allocation preview
+            function updateResourceAllocationPreview(gpuCount, nodeCount) {
+                const previewContainer = document.getElementById('resource-allocation-preview');
+                
+                // Get selected GPU information
+                let cpuCoresPerGpu = 0;
+                let memoryGbPerGpu = 0;
+                
+                // Calculate total resources
+                const totalCpuCores = (cpuCoresPerGpu * gpuCount * nodeCount).toFixed(1);
+                const totalMemoryGb = (memoryGbPerGpu * gpuCount * nodeCount).toFixed(1);
+                
+                // Update preview information
+                const gpuValueText = `${gpuCount} GPUs × ${nodeCount} Nodes`;
+                
+                document.getElementById('preview-gpu-info').textContent = gpuValueText;
+                document.getElementById('preview-cpu-info').textContent = `${totalCpuCores} cores (automatically assigned)`;
+                document.getElementById('preview-memory-info').textContent = `${totalMemoryGb}Gi (automatically assigned)`;
+                
+                // Show preview container
+                previewContainer.style.display = 'block';
+                
+                // Get current selected image
+                // const selectedImage = document.querySelector('select[name="master_image"]').value;
+                const selectedImage = document.getElementById('master_image').value;
+                
+                // Get match status elements
+                const matchStatusGoodElement = document.getElementById('match-status-good');
+                const matchStatusPoorElement = document.getElementById('match-status-poor');
+                
+                // Hide match status by default
+                matchStatusGoodElement.style.display = 'none';
+                matchStatusPoorElement.style.display = 'none';
+                
+                // If no image selected, don't perform resource matching analysis
+                if (!selectedImage) {
+                    return;
+                }
+                
+                // Find selected image metadata
+                const selectedImageData = window.imagesData && window.imagesData.images ? 
+                    window.imagesData.images.find(img => img.full_name === selectedImage) : null;
+                
+                // If the image does not have the minimum_gpu_memory property, hide matching status
+                if (!selectedImageData || !selectedImageData.minimum_gpu_memory || selectedImageData.minimum_gpu_memory.toString().trim() === '') {
+                    matchStatusGoodElement.style.display = 'none';
+                    matchStatusPoorElement.style.display = 'none';
+
+                    const statusIconsContainer = document.getElementById('status-icons-container');
+                    if(statusIconsContainer) statusIconsContainer.style.display = 'none';
+                    
+                    return;
+                }else{
+                    // Show matching status icons
+                    const statusIconsContainer = document.getElementById('status-icons-container');
+                    if(statusIconsContainer) statusIconsContainer.style.display = 'inline-block';
+                }
+            }
+
+
+
 
             // Add a generic result display modal function
             function showResultModal(title, message, colorClass, callback) {
@@ -1032,6 +1347,8 @@
                 });
             }
         </script>
+
+
         <div class="container main-form">
             <div class="columns is-multiline">
                 <div class="column is-12">
@@ -1046,8 +1363,20 @@
                 <div class="field">
                     <label class="label">Container Image</label>
                     <div class="control">
-                        <div class="select is-fullwidth">
-                            <select name="master_image"></select>
+                        <input type="hidden" id="master_image" name="master_image">
+
+                        <!--Trigger button-->
+                        <div class="image-select-trigger">
+                            <div class="select-header">
+                                <span class="select-header-name">Select an image ...</span>
+                                <span class="dropdown-icon"><i class="fa-solid fa-caret-down"></i></span>
+                            </div>
+                        </div>
+
+                        <div class="image-options">
+                            <div class="options-grid">
+
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1080,23 +1409,85 @@
             <!-- GPU Selection -->
             <div class="form-section">
                 <h3 class="section-title">GPU Configuration</h3>
+
                 <div class="field">
-                    <label class="label">GPU Type</label>
+                <div id="gpu-type-selection" class="field" style="display: none;">
+                    <!-- <label class="label">Available GPU Types for Selection</label> -->
                     <div class="control">
                         <div id="gpu-options-container" class="buttons gpu-buttons-container"></div>
-                        <input type="hidden" id="gpu-type-input" name="gpu_type" value="RTX3090">
+                        <input type="hidden" id="gpu-type-input" name="gpu_type" value="">
                         <input type="hidden" id="gpu-name-input" name="gpu_name" value="">
                     </div>
                 </div>
-                
-                <!-- GPU and node combination (always visible now) -->
-                <div id="gpu-node-section" class="field">
-                    <label class="label">GPU and Node Configuration</label>
-                    <div class="control">
-                        <div id="gpu-node-options" class="buttons gpu-node-buttons-container"></div>
-                        <input type="hidden" id="gpu-limit-input" name="gpu_limit" value="1">
-                        <input type="hidden" id="node-replicas-input" name="node_replicas" value="1">
+
+                <!-- The regioin label -->
+                <div class="control">
+                    <button id="toggle-region-selection" class="button is-small mb-2 borderless-button" style="border: none !important;">
+                        <span class="icon">
+                            <i class="fas fa-chevron-right"></i>
+                        </span>
+                        <span>Regions</span>
+                    </button>
+                    <div id="region-options-container" class="buttons region-buttons-container" style="display: none;">
                     </div>
+                    <input type="hidden" id="selected-region-input" name="selected_region" value="[]">
+                    <script>
+                        document.getElementById('toggle-region-selection').addEventListener('click', function() {
+                            const container = document.getElementById('region-options-container');
+                            const icon = this.querySelector('.icon i');
+                            const text = this.querySelector('span:not(.icon)');
+                            
+                            if (container.style.display === 'none') {
+                                container.style.display = 'flex';
+                                icon.classList.remove('fa-chevron-right');
+                                icon.classList.add('fa-chevron-down');
+                                text.textContent = 'Regions';
+                            } else {
+                                container.style.display = 'none';
+                                icon.classList.remove('fa-chevron-down');
+                                icon.classList.add('fa-chevron-right');
+                                text.textContent = 'Regions';
+                            }
+                        });
+                    </script>
+                </div>
+
+                <!-- GPU and node number input -->
+                <div id="gpu-node-section" class="field" style="display: none;">
+                    <!-- <label class="label">GPU and Node Configuration</label> -->
+                    <div class="control">
+                        <div class="field is-horizontal">
+                            <div class="field-body">
+                                <div class="field">
+                                    <label class="label">GPUs per Node: </label>
+                                    <div class="control">
+                                        <div class="select">
+                                            <select id="num-gpu-per-node-select" name="num_gpu_per_node" onchange="updateNodeMaxCount()">
+                                                <option value="0">0 GPU</option>
+                                                <option value="1">1 GPU</option>
+                                                <option value="2">2 GPUs</option>
+                                                <option value="4">4 GPUs</option>
+                                                <option value="8">8 GPUs</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="field">
+                                    <label class="label">Number of Nodes: </label>
+                                    <div class="control">
+                                        <input id="num-node-input" class="input" type="number" name="num_node" min="0" max="1" oninput="validateNodeInput(this)" defaultValue="0">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <p id="gpu-limit-warning" class="help is-danger" style="display: none;">
+                            The total number of GPUs exceeds the available limit.
+                        </p>
+                        <p id="node-limit-warning" class="help is-danger" style="display: none;">
+                            Please enter a valid number of nodes between 0 and the maximum available.
+                        </p>
+                    </div>           
+
                     
                     <!-- Resource Allocation Preview -->
                     <div id="resource-allocation-preview" class="mt-4" style="display: none;">
