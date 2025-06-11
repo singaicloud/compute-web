@@ -545,7 +545,7 @@
                         options.classList.remove('visible');
                     }
                 });
-                
+
                 // No longer need to enhance image metadata, use data directly from backend API
                 function enhanceImagesWithMetadata(images) {
                     // Function kept for compatibility
@@ -627,7 +627,12 @@
 
                 function renderGPUTypeSelection() {
                     const gpuContainer = document.getElementById('gpu-options-container');
-                    gpuContainer.innerHTML = '';
+                    
+                    // Store current GPU selections before updating
+                    const currentSelections = new Set();
+                    document.querySelectorAll('.gpu-option.is-selected').forEach(button => {
+                        currentSelections.add(button.dataset.type);
+                    });
                     
                     // Get the selected regions
                     const selectedRegions = JSON.parse(document.getElementById('selected-region-input').value || '[]');
@@ -636,15 +641,13 @@
                     gpuContainer.classList.add('is-flex', 'is-flex-wrap-wrap');
 
                     // Filter GPU types based on selected regions
-                    // Create dictionary to store nodes by GPU type
                     const filteredGpuTypes = {};
                     
                     // Iterate through all GPU nodes
                     for (const nodeKey in window.gpuInfo) {
                         const node = window.gpuInfo[nodeKey];
 
-                        // Always add this GPU type to the dictionary no matter it is selected or not
-                        // If this GPU type doesn't exist in our dictionary yet, create an array for it
+                        // Always add this GPU type to the dictionary
                         if (!filteredGpuTypes[node.gpu_sku]) {
                             filteredGpuTypes[node.gpu_sku] = {
                                 nodes: [],
@@ -657,43 +660,62 @@
                         
                         // Check if node's region is in selected regions
                         if (selectedRegions.includes(node.region)) {
-                            // Add this node to the array for this GPU type
                             filteredGpuTypes[node.gpu_sku].nodes.push(node);
-                            
-                            // Update totals
                             filteredGpuTypes[node.gpu_sku].total += (node.total || 0);
                             filteredGpuTypes[node.gpu_sku].used += (node.used || 0);
                         }
                     }
 
-                    // Create buttons for each GPU type
+                    // Create or update buttons for each GPU type
                     for (const gpuType in filteredGpuTypes) {
-                        const gpuButton = document.createElement('button');
-                        gpuButton.classList.add('button', 'gpu-option', 'mr-2', 'mb-2');
-                        gpuButton.dataset.type = gpuType;
-                        gpuButton.dataset.name = filteredGpuTypes[gpuType].gpu_name || gpuType;
+                        let gpuButton = document.querySelector(`.gpu-option[data-type="${gpuType}"]`);
+                        const available = Math.max(0, (filteredGpuTypes[gpuType].total || 0) - (filteredGpuTypes[gpuType].used || 0));
+                        
+                        if (!gpuButton) {
+                            // Create new button if it doesn't exist
+                            gpuButton = document.createElement('button');
+                            gpuButton.classList.add('button', 'gpu-option', 'mr-2', 'mb-2');
+                            gpuButton.dataset.type = gpuType;
+                            gpuButton.dataset.name = filteredGpuTypes[gpuType].gpu_name || gpuType;
+                            
+                            // Set fixed width and height for consistent button size
+                            gpuButton.style.width = '150px';
+                            gpuButton.style.height = '40px';
+                            
+                            // Add click event listener
+                            gpuButton.addEventListener('click', function() {
+                                this.classList.toggle('is-primary');
+                                this.classList.toggle('is-selected');
+                                
+                                // Update hidden inputs with selected GPU types
+                                updateSelectedGpuTypes();
+                                
+                                // Setup GPU-node options based on selected GPU types
+                                setupGpuNodeOptionsForMulti();
+                            });
+                            
+                            gpuContainer.appendChild(gpuButton);
+                        }
+                        
+                        // Update button data and text
                         gpuButton.dataset.total = filteredGpuTypes[gpuType].total || 0;
                         gpuButton.dataset.used = filteredGpuTypes[gpuType].used || 0;
-                        const available = Math.max(0, (filteredGpuTypes[gpuType].total || 0) - (filteredGpuTypes[gpuType].used || 0));
                         gpuButton.textContent = `${filteredGpuTypes[gpuType].gpu_name || gpuType} (${available})`;
-                        // Set fixed width and height for consistent button size - same as region buttons
-                        gpuButton.style.width = '150px';
-                        gpuButton.style.height = '40px';
                         
-                        // Add click event listener
-                        gpuButton.addEventListener('click', function() {
-                            this.classList.toggle('is-primary');
-                            this.classList.toggle('is-selected');
-                            
-                            // Update hidden inputs with selected GPU types
-                            updateSelectedGpuTypes();
-                            
-                            // Setup GPU-node options based on selected GPU types
-                            setupGpuNodeOptionsForMulti();
-                        });
-                        
-                        gpuContainer.appendChild(gpuButton);
+                        // Restore selection state
+                        if (currentSelections.has(gpuType)) {
+                            gpuButton.classList.add('is-primary', 'is-selected');
+                        } else {
+                            gpuButton.classList.remove('is-primary', 'is-selected');
+                        }
                     }
+
+                    // Remove buttons for GPU types that no longer exist
+                    document.querySelectorAll('.gpu-option').forEach(button => {
+                        if (!filteredGpuTypes[button.dataset.type]) {
+                            button.remove();
+                        }
+                    });
 
                     // Always show the GPU type selection section
                     gpuContainer.style.display = 'block';
