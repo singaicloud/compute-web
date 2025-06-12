@@ -1212,18 +1212,18 @@
                             if (encodedDetails) {
                                 const tagData = JSON.parse(decodeURIComponent(encodedDetails));
                                 // Add default_entrypoint and default_ports to URL if available
-                                let url = `launch-multi.html?repository=${encodeURIComponent(repository)}&image=${encodeURIComponent(imageName)}&tag=${encodeURIComponent(tag)}`;
+                                let url = `launch.html?repository=${encodeURIComponent(repository)}&image=${encodeURIComponent(imageName)}&tag=${encodeURIComponent(tag)}`;
                                 if (tagData.default_entrypoint) {
                                     url += `&entrypoint=${encodeURIComponent(tagData.default_entrypoint)}`;
                                 }
                                 if (tagData.default_port) {
                                     url += `&ports=${encodeURIComponent(tagData.default_port)}`;
                                 }
-                                // Navigate to the launch-multi page
+                                // Navigate to the launch page
                                 window.location.href = url;
                             } else {
                                 // Fallback to basic URL if data not found
-                                const url = `launch-multi.html?repository=${encodeURIComponent(repository)}&image=${encodeURIComponent(imageName)}&tag=${encodeURIComponent(tag)}`;
+                                const url = `launch.html?repository=${encodeURIComponent(repository)}&image=${encodeURIComponent(imageName)}&tag=${encodeURIComponent(tag)}`;
                                 window.location.href = url;
                             }
                             // Prevent the default behavior
